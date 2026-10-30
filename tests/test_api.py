@@ -1,13 +1,14 @@
 """Integration and security tests for Utsav Planner API endpoints."""
 
-from datetime import date, timedelta
 import json
+from datetime import date, timedelta
 from unittest.mock import patch
+
 import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app, get_today
-from app.models import CreativeIdeas, ThemeIdea, MenuSection, ActivityIdea, DecorIdea
+from app.models import ActivityIdea, CreativeIdeas, DecorIdea, MenuSection, ThemeIdea
 from app.planner.data import CATEGORY_LABELS
 from app.security import (
     MAX_PAYLOAD_SIZE,
@@ -52,7 +53,11 @@ def mock_ideas() -> CreativeIdeas:
             )
         ],
         menu_suggestions=[
-            MenuSection(meal_type="High Tea", dishes=["Masala Chai", "Paneer Pakora"], dietary_tags=["Vegetarian"])
+            MenuSection(
+                meal_type="High Tea",
+                dishes=["Masala Chai", "Paneer Pakora"],
+                dietary_tags=["Vegetarian"],
+            )
         ],
         activities=[
             ActivityIdea(
@@ -62,7 +67,11 @@ def mock_ideas() -> CreativeIdeas:
             )
         ],
         decor_ideas=[
-            DecorIdea(area="Mandap", concept="Marigold floral canopy", suggested_materials=["Marigolds", "Brass urli"])
+            DecorIdea(
+                area="Mandap",
+                concept="Marigold floral canopy",
+                suggested_materials=["Marigolds", "Brass urli"],
+            )
         ],
         budget_fit_note="Carefully balanced with budget.",
         source="ai",
@@ -79,7 +88,11 @@ def test_category_slug_consistency_across_engines(client, fixed_today, mock_idea
         with patch("app.main.generate_ideas", return_value=mock_ideas):
             for event_type in ["wedding", "birthday", "community"]:
                 labels = CATEGORY_LABELS[event_type]
-                budget_inr = 1500000 if event_type == "wedding" else (50000 if event_type == "birthday" else 100000)
+                budget_inr = (
+                    1500000
+                    if event_type == "wedding"
+                    else (50000 if event_type == "birthday" else 100000)
+                )
                 payload = {
                     "event_type": event_type,
                     "event_date": (fixed_today + timedelta(days=90)).isoformat(),
@@ -111,11 +124,14 @@ def test_category_slug_consistency_across_engines(client, fixed_today, mock_idea
 # ---------------------------------------------------------------------
 # 2. Plan API: All Event Types, Structure, and Totals
 # ---------------------------------------------------------------------
-@pytest.mark.parametrize("event_type,budget_val,guests", [
-    ("wedding", 2000000, 250),
-    ("birthday", 75000, 45),
-    ("community", 150000, 400),
-])
+@pytest.mark.parametrize(
+    "event_type,budget_val,guests",
+    [
+        ("wedding", 2000000, 250),
+        ("birthday", 75000, 45),
+        ("community", 150000, 400),
+    ],
+)
 def test_plan_api_all_event_types(client, fixed_today, mock_ideas, event_type, budget_val, guests):
     """Verify /api/plan returns all sections and totals match input budget exactly."""
     app.dependency_overrides[get_today] = lambda: fixed_today
@@ -320,7 +336,10 @@ def test_internal_server_error_format_500(fixed_today):
     safe_client = TestClient(app, raise_server_exceptions=False)
     app.dependency_overrides[get_today] = lambda: fixed_today
     try:
-        with patch("app.main.allocate_budget", side_effect=Exception("Database connection secret_db_pw failed")):
+        with patch(
+            "app.main.allocate_budget",
+            side_effect=Exception("Database connection secret_db_pw failed"),
+        ):
             payload = {
                 "event_type": "wedding",
                 "event_date": (fixed_today + timedelta(days=90)).isoformat(),
@@ -422,4 +441,3 @@ def test_get_today_returns_kolkata_date_and_is_overridable(client, mock_ideas):
             assert data["timeline"]["days_remaining"] == (date(2028, 6, 15) - overridden_date).days
     finally:
         app.dependency_overrides.clear()
-

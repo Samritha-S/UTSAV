@@ -1,15 +1,14 @@
 """Unit tests for the backwards-scheduling timeline engine."""
 
 from datetime import date, timedelta
+
 import pytest
 
 from app.models import (
     CityTier,
-    DietaryPreference,
     EventInput,
     EventType,
     TaskStatus,
-    VenueSetting,
 )
 from app.planner.timeline import build_timeline
 
@@ -221,4 +220,3 @@ def test_two_weeks_away_scenario(fixed_today: date):
     assert schedule.most_urgent_action is not None
     # Many high-lead tasks should be marked overdue with concrete alternative advice
     assert schedule.status_counts[TaskStatus.OVERDUE_COMPRESSED.value] > 0
-

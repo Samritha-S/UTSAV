@@ -5,7 +5,6 @@ creative recommendations even if the Gemini API is unreachable, times out, or is
 """
 
 from copy import deepcopy
-from typing import Dict, List, Set
 
 from app.models import (
     ActivityIdea,
@@ -19,19 +18,55 @@ from app.models import (
     ThemeIdea,
 )
 
-NON_VEG_KEYWORDS: Set[str] = {
-    "chicken", "mutton", "fish", "prawn", "egg", "lamb", "beef", "pork",
-    "keema", "gosht", "tikka (chicken)", "kabab (meat)", "seafood", "rogan josh"
+NON_VEG_KEYWORDS: set[str] = {
+    "chicken",
+    "mutton",
+    "fish",
+    "prawn",
+    "egg",
+    "lamb",
+    "beef",
+    "pork",
+    "keema",
+    "gosht",
+    "tikka (chicken)",
+    "kabab (meat)",
+    "seafood",
+    "rogan josh",
 }
 
-JAIN_RESTRICTED_KEYWORDS: Set[str] = {
-    "onion", "garlic", "potato", "aloo", "pyaz", "lahsun", "radish", "mooli",
-    "carrot", "gajar", "beetroot", "turnip", "ginger", "adrak"
+JAIN_RESTRICTED_KEYWORDS: set[str] = {
+    "onion",
+    "garlic",
+    "potato",
+    "aloo",
+    "pyaz",
+    "lahsun",
+    "radish",
+    "mooli",
+    "carrot",
+    "gajar",
+    "beetroot",
+    "turnip",
+    "ginger",
+    "adrak",
 }
 
-VEGAN_RESTRICTED_KEYWORDS: Set[str] = {
-    "paneer", "ghee", "curd", "yogurt", "dahi", "cream", "malai", "khoya",
-    "butter", "makkhan", "rabri", "rasgulla", "gulab jamun (dairy)", "cheese"
+VEGAN_RESTRICTED_KEYWORDS: set[str] = {
+    "paneer",
+    "ghee",
+    "curd",
+    "yogurt",
+    "dahi",
+    "cream",
+    "malai",
+    "khoya",
+    "butter",
+    "makkhan",
+    "rabri",
+    "rasgulla",
+    "gulab jamun (dairy)",
+    "cheese",
 }
 
 
@@ -39,26 +74,38 @@ VEGAN_RESTRICTED_KEYWORDS: Set[str] = {
 # Curated Benchmark Themes, Menus, Activities, and Decor per Event Type
 # =====================================================================
 
-CURATED_IDEAS_DATA: Dict[str, Dict] = {
+CURATED_IDEAS_DATA: dict[str, dict] = {
     "wedding": {
         "themes": [
             {
                 "name": "Royal Marwar & Shekhawati Heritage",
                 "description": "Timeless Rajasthani palatial elegance featuring hand-block printed drapes, brass urns, and fragrant marigold torans.",
-                "decor_elements": ["Brass Samai oil lamps", "Fresh saffron genda phool tassels", "Bandhani fabric canopies"],
-                "dress_code": "Traditional Rajputi poshak, royal bandhgala sherwanis, or rich silk lehengas."
+                "decor_elements": [
+                    "Brass Samai oil lamps",
+                    "Fresh saffron genda phool tassels",
+                    "Bandhani fabric canopies",
+                ],
+                "dress_code": "Traditional Rajputi poshak, royal bandhgala sherwanis, or rich silk lehengas.",
             },
             {
                 "name": "Vibrant Punjabi Mela & Sangeet Utsav",
                 "description": "High-energy festival ambience with colorful embroidered phulkari hangings, festive dhol rhythms, and rustic village street stalls.",
-                "decor_elements": ["Handmade phulkari backdrops", "Painted clay matkas", "Bangles and parandi photo booth"],
-                "dress_code": "Bright vibrant colors like fuchsia pink, sunshine yellow, and mirror-work kurtas."
+                "decor_elements": [
+                    "Handmade phulkari backdrops",
+                    "Painted clay matkas",
+                    "Bangles and parandi photo booth",
+                ],
+                "dress_code": "Bright vibrant colors like fuchsia pink, sunshine yellow, and mirror-work kurtas.",
             },
             {
                 "name": "Classic South Indian Temple Sanctum",
                 "description": "A serene Vedic atmosphere enriched with fragrant white mogra blossoms, brass kuthuvillakku lamps, and pure silk temple borders.",
-                "decor_elements": ["Fresh jasmine and lotus garlands", "Banana stem entrance pillars", "Traditional kolam/rangoli patterns"],
-                "dress_code": "Pure Kanjeevaram silk sarees with gold zari and traditional ivory veshtis."
+                "decor_elements": [
+                    "Fresh jasmine and lotus garlands",
+                    "Banana stem entrance pillars",
+                    "Traditional kolam/rangoli patterns",
+                ],
+                "dress_code": "Pure Kanjeevaram silk sarees with gold zari and traditional ivory veshtis.",
             },
         ],
         "menus": [
@@ -68,9 +115,9 @@ CURATED_IDEAS_DATA: Dict[str, Dict] = {
                     "Kolkata Puchka & Dahi Puri with Spiced Mint Water",
                     "Crispy Paneer Tikka with Mint Chutney",
                     "Sweet Potato Shakarkandi Chaat",
-                    "Refreshing Kokum Sherbet & Badam Thandai"
+                    "Refreshing Kokum Sherbet & Badam Thandai",
                 ],
-                "dietary_tags": ["Pure Veg", "Jain Friendly Options"]
+                "dietary_tags": ["Pure Veg", "Jain Friendly Options"],
             },
             {
                 "meal_type": "Grand Celebratory Feast",
@@ -79,52 +126,64 @@ CURATED_IDEAS_DATA: Dict[str, Dict] = {
                     "Shahi Paneer in Velvety Cashew Gravy",
                     "Jeera Pulao & Dry Fruit Zafrani Biryani",
                     "Tandoori Laccha Paratha & Butter Naan",
-                    "Burani Raita & Green Moong Salad"
+                    "Burani Raita & Green Moong Salad",
                 ],
-                "dietary_tags": ["Pure Veg", "North Indian Classic"]
+                "dietary_tags": ["Pure Veg", "North Indian Classic"],
             },
             {
                 "meal_type": "Mithai & Traditional Confectionery",
                 "dishes": [
                     "Hot Kesari Jalebi with Creamy Malpua & Rabri",
                     "Bikaneri Moong Dal Halwa Gilded with Pistachios",
-                    "Cardamom Spiced Paan & Mukhwas Station"
+                    "Cardamom Spiced Paan & Mukhwas Station",
                 ],
-                "dietary_tags": ["Dessert", "Vegetarian"]
+                "dietary_tags": ["Dessert", "Vegetarian"],
             },
         ],
         "activities": [
             {
                 "title": "Family Antakshari & Sangeet Dance Face-off",
                 "description": "A friendly musical showdown between bride and groom sides led by an engaging cousin or emcee.",
-                "suitable_for": "All Generations & Extended Family"
+                "suitable_for": "All Generations & Extended Family",
             },
             {
                 "title": "Interactive Mehendi & Lac Bangle Craft Station",
                 "description": "Live artisan crafting custom lac bangles and intricate mehendi patterns on-the-spot for guests.",
-                "suitable_for": "Women & Kids"
+                "suitable_for": "Women & Kids",
             },
             {
                 "title": "Ethnic Photo Booth with Vintage Royal Props",
                 "description": "Instant Polaroid camera station with turbans, dupattas, and ornate wooden photo frames.",
-                "suitable_for": "Friends & Youth"
+                "suitable_for": "Friends & Youth",
             },
         ],
         "decor": [
             {
                 "area": "Mandap & Sacred Havan Zone",
                 "concept": "Four-pillar mandap wrapped in marigold ropes with hanging lotus buds and brass floor urlis.",
-                "suggested_materials": ["Fresh orange/yellow genda phool", "Lotus flowers", "Brass urlis with floating tealights"]
+                "suggested_materials": [
+                    "Fresh orange/yellow genda phool",
+                    "Lotus flowers",
+                    "Brass urlis with floating tealights",
+                ],
             },
             {
                 "area": "Grand Entrance Gateway",
                 "concept": "Arched wooden frame draped in raw silk fabric with brass bell windchimes welcoming arriving guests.",
-                "suggested_materials": ["Marigold torans", "Temple bells", "Hand-painted earthen diyas"]
+                "suggested_materials": [
+                    "Marigold torans",
+                    "Temple bells",
+                    "Hand-painted earthen diyas",
+                ],
             },
             {
                 "area": "Dining Lawn & Buffet Canopies",
                 "concept": "Warm fairy light ceilings with sheer fabric tenting and natural potted fern centerpieces.",
-                "suggested_materials": ["Warm white LED fairy strings", "Jute runners", "Clay terracotta crockery accents"]
+                "suggested_materials": [
+                    "Warm white LED fairy strings",
+                    "Jute runners",
+                    "Clay terracotta crockery accents",
+                ],
             },
         ],
     },
@@ -133,20 +192,32 @@ CURATED_IDEAS_DATA: Dict[str, Dict] = {
             {
                 "name": "Desi Carnival & Anand Mela",
                 "description": "Lively street carnival filled with vintage wooden games, candy floss carts, balloon twisters, and cheerful pinwheels.",
-                "decor_elements": ["Bright rainbow bunting flags", "Whimsical colorful paper fans", "Popcorn and candy floss kiosk"],
-                "dress_code": "Casual comfortable party attire in bright festive pastels."
+                "decor_elements": [
+                    "Bright rainbow bunting flags",
+                    "Whimsical colorful paper fans",
+                    "Popcorn and candy floss kiosk",
+                ],
+                "dress_code": "Casual comfortable party attire in bright festive pastels.",
             },
             {
                 "name": "Jungle Safari & Wildlife Explorer",
                 "description": "An adventurous tropical setting with greenery foliage, faux safari binoculars, animal masks, and earthy adventure props.",
-                "decor_elements": ["Palm leaves & green balloon foliage garland", "Wooden crate risers", "Animal cutout backdrops"],
-                "dress_code": "Khaki safari shorts, earth tones, or animal-print accents."
+                "decor_elements": [
+                    "Palm leaves & green balloon foliage garland",
+                    "Wooden crate risers",
+                    "Animal cutout backdrops",
+                ],
+                "dress_code": "Khaki safari shorts, earth tones, or animal-print accents.",
             },
             {
                 "name": "Bollywood Retro Stars",
                 "description": "Glamorous celebration inspired by vintage Bollywood cinema, vinyl records, classic dialogues, and red carpet fun.",
-                "decor_elements": ["Vintage film reel cutouts", "Star-shaped golden balloons", "Movie clapboard welcome sign"],
-                "dress_code": "Retro 80s/90s Bollywood inspired outfits with fun sunglasses."
+                "decor_elements": [
+                    "Vintage film reel cutouts",
+                    "Star-shaped golden balloons",
+                    "Movie clapboard welcome sign",
+                ],
+                "dress_code": "Retro 80s/90s Bollywood inspired outfits with fun sunglasses.",
             },
         ],
         "menus": [
@@ -155,61 +226,65 @@ CURATED_IDEAS_DATA: Dict[str, Dict] = {
                 "dishes": [
                     "Bite-sized Pav Bhaji Sliders & Mini Pizza Toasts",
                     "Crispy Corn Salt & Pepper Cups",
-                    "Sweet Mango Lassi & Chilled Nimbu Paani"
+                    "Sweet Mango Lassi & Chilled Nimbu Paani",
                 ],
-                "dietary_tags": ["Kids Special", "Pure Veg"]
+                "dietary_tags": ["Kids Special", "Pure Veg"],
             },
             {
                 "meal_type": "Main Party Spread",
                 "dishes": [
                     "Creamy Penne Alfredo with Herb Garlic Bread",
                     "Amritsari Chole with Soft Bhature",
-                    "Veggie Pulao & Fresh Sprouted Salad"
+                    "Veggie Pulao & Fresh Sprouted Salad",
                 ],
-                "dietary_tags": ["Comfort Food", "All Ages"]
+                "dietary_tags": ["Comfort Food", "All Ages"],
             },
             {
                 "meal_type": "Birthday Cake & Sweet Treats",
                 "dishes": [
                     "Customized Belgian Chocolate Truffle Cake",
                     "Cupcake Towers with Buttercream Swirls",
-                    "Handmade Fruit Kulfi Popsicles"
+                    "Handmade Fruit Kulfi Popsicles",
                 ],
-                "dietary_tags": ["Dessert", "Vegetarian"]
+                "dietary_tags": ["Dessert", "Vegetarian"],
             },
         ],
         "activities": [
             {
                 "title": "Classic Birthday Games with Desi Twist",
                 "description": "Fast-paced Musical Chairs, Pass the Parcel with mystery challenges, and a balloon pop race.",
-                "suitable_for": "Children & Siblings"
+                "suitable_for": "Children & Siblings",
             },
             {
                 "title": "Interactive Magic Show & Balloon Sculpting",
                 "description": "A 30-minute comedy magic performance followed by personalized sword, dog, and flower balloon twists.",
-                "suitable_for": "Kids & Toddlers"
+                "suitable_for": "Kids & Toddlers",
             },
             {
                 "title": "DIY Block Printing or Clay Pottery Corner",
                 "description": "Hands-on creative activity where children print their own canvas tote bag to take home.",
-                "suitable_for": "Creative Kids & Parents"
+                "suitable_for": "Creative Kids & Parents",
             },
         ],
         "decor": [
             {
                 "area": "Cake Cutting Backdrop",
                 "concept": "Organic balloon garland in theme shades framing a customized neon name sign.",
-                "suggested_materials": ["Biodegradable latex balloons", "Acrylic name board", "LED warm neon backlighting"]
+                "suggested_materials": [
+                    "Biodegradable latex balloons",
+                    "Acrylic name board",
+                    "LED warm neon backlighting",
+                ],
             },
             {
                 "area": "Party Entrance Arch",
                 "concept": "Welcoming rainbow balloon arch with welcome chalkboard and helium character balloons.",
-                "suggested_materials": ["Paper pinwheels", "Thematic standing cutouts"]
+                "suggested_materials": ["Paper pinwheels", "Thematic standing cutouts"],
             },
             {
                 "area": "Gift & Activity Table",
                 "concept": "Coordinated colorful table runners with neatly labeled thematic return gift hampers.",
-                "suggested_materials": ["Fabric table drapery", "Printed favor boxes"]
+                "suggested_materials": ["Fabric table drapery", "Printed favor boxes"],
             },
         ],
     },
@@ -218,20 +293,32 @@ CURATED_IDEAS_DATA: Dict[str, Dict] = {
             {
                 "name": "Utsav Sandhya (Festive Melawa)",
                 "description": "A vibrant celebration honoring Indian festival traditions with collective lighting of deepams, devotional hymns, and cultural dances.",
-                "decor_elements": ["Floor floral rangoli with clay diyas", "Saffron fabric stage drapery", "Mango leaf torans"],
-                "dress_code": "Traditional Indian ethnic kurtas, saris, and festive dupattas."
+                "decor_elements": [
+                    "Floor floral rangoli with clay diyas",
+                    "Saffron fabric stage drapery",
+                    "Mango leaf torans",
+                ],
+                "dress_code": "Traditional Indian ethnic kurtas, saris, and festive dupattas.",
             },
             {
                 "name": "Sanskriti & Heritage Milan",
                 "description": "Celebration of diverse regional cultures with community folk arts, classical musical recitals, and traditional craft displays.",
-                "decor_elements": ["Handicraft wall hangings", "Brass bells and torans", "Fairy light canopies across walking lanes"],
-                "dress_code": "Regional attire representing home states."
+                "decor_elements": [
+                    "Handicraft wall hangings",
+                    "Brass bells and torans",
+                    "Fairy light canopies across walking lanes",
+                ],
+                "dress_code": "Regional attire representing home states.",
             },
             {
                 "name": "Anand Mela (Community Fair & Food Bazaar)",
                 "description": "An open community fair combining home-chef food stalls, games, talent showcase, and an evening Dandiya/Garba circle.",
-                "decor_elements": ["Color-coordinated stall canopies", "Paper lantern overhead strings (Kandils)", "Festive village arch"],
-                "dress_code": "Casual ethnic wear or colorful Garba chaniya cholis."
+                "decor_elements": [
+                    "Color-coordinated stall canopies",
+                    "Paper lantern overhead strings (Kandils)",
+                    "Festive village arch",
+                ],
+                "dress_code": "Casual ethnic wear or colorful Garba chaniya cholis.",
             },
         ],
         "menus": [
@@ -240,9 +327,9 @@ CURATED_IDEAS_DATA: Dict[str, Dict] = {
                 "dishes": [
                     "Hot Cardamom Masala Chai & Kokum Sharbat",
                     "Pure Desi Ghee Halwa / Sheera Prasadam",
-                    "Steamed Modaks / Ladoos"
+                    "Steamed Modaks / Ladoos",
                 ],
-                "dietary_tags": ["Sattvic", "Devotional Prasadam"]
+                "dietary_tags": ["Sattvic", "Devotional Prasadam"],
             },
             {
                 "meal_type": "Community Langar / Bhandara Feast",
@@ -250,89 +337,109 @@ CURATED_IDEAS_DATA: Dict[str, Dict] = {
                     "Poori with Aloo Tamatar Curry / Pumpkin Sabzi",
                     "Panchratna Khichdi tempered with Cumin & Desi Ghee",
                     "Gujarati/Punjabi Kadhi with Steamed Rice",
-                    "Boondi Raita & Roasted Papad"
+                    "Boondi Raita & Roasted Papad",
                 ],
-                "dietary_tags": ["Pure Veg", "Large Crowd Friendly"]
+                "dietary_tags": ["Pure Veg", "Large Crowd Friendly"],
             },
             {
                 "meal_type": "Community Sweet Distribution",
                 "dishes": [
                     "Warm Kesar Badam Kheer in Clay Sakoras",
-                    "Crispy Jalebi made fresh on-site"
+                    "Crispy Jalebi made fresh on-site",
                 ],
-                "dietary_tags": ["Dessert", "Compostable Serving"]
+                "dietary_tags": ["Dessert", "Compostable Serving"],
             },
         ],
         "activities": [
             {
                 "title": "Community Garba, Dandiya & Folk Circle",
                 "description": "Inclusive group dance session open to residents of all ages with upbeat traditional percussion music.",
-                "suitable_for": "Entire Neighborhood & All Ages"
+                "suitable_for": "Entire Neighborhood & All Ages",
             },
             {
                 "title": "Inter-Wing Rangoli & Painting Competition",
                 "description": "Creative competition on the society plaza with themes celebrating environment and unity.",
-                "suitable_for": "Children, Youth & Homemakers"
+                "suitable_for": "Children, Youth & Homemakers",
             },
             {
                 "title": "Senior Citizens' Bhajan & Antakshari Session",
                 "description": "A relaxed gathering in the society amphitheater featuring golden era classics and community melodies.",
-                "suitable_for": "Elders & Families"
+                "suitable_for": "Elders & Families",
             },
         ],
         "decor": [
             {
                 "area": "Main Festival Stage & Altar",
                 "concept": "Raised modular platform with backdrop of golden marigold garlands, brass samai lamps, and sacred motifs.",
-                "suggested_materials": ["Fresh genda phool", "Brass oil lamps", "Saffron and marigold fabric drapery"]
+                "suggested_materials": [
+                    "Fresh genda phool",
+                    "Brass oil lamps",
+                    "Saffron and marigold fabric drapery",
+                ],
             },
             {
                 "area": "Community Entrance Plaza",
                 "concept": "Grand entrance archway adorned with mango leaves, floral torans, and a giant welcome rangoli with floating petals.",
-                "suggested_materials": ["Organic flower petals", "Powder colors", "Clay diyas"]
+                "suggested_materials": ["Organic flower petals", "Powder colors", "Clay diyas"],
             },
             {
                 "area": "Open Amphitheater & Pathways",
                 "concept": "Warm white fairy light strings overhead creating a starry sky canopy across the central walking avenue.",
-                "suggested_materials": ["Outdoor-rated fairy lights", "Bunting banners", "Directional society signboards"]
+                "suggested_materials": [
+                    "Outdoor-rated fairy lights",
+                    "Bunting banners",
+                    "Directional society signboards",
+                ],
             },
         ],
     },
 }
 
 
-BIRTHDAY_AGE_ADAPTATIONS: Dict[str, Dict] = {
+BIRTHDAY_AGE_ADAPTATIONS: dict[str, dict] = {
     "adults": {
         "themes": [
             {
                 "name": "Evening Ghazal & Rooftop Lounge",
                 "description": "Sophisticated evening gathering with warm acoustic melodies, ambient fairy lights, and artisanal mocktails.",
-                "decor_elements": ["Warm Edison bulbs", "Moroccan candle lanterns", "Plush low-seating diwans"],
-                "dress_code": "Smart festive evening wear / Indo-western fusion."
+                "decor_elements": [
+                    "Warm Edison bulbs",
+                    "Moroccan candle lanterns",
+                    "Plush low-seating diwans",
+                ],
+                "dress_code": "Smart festive evening wear / Indo-western fusion.",
             },
             {
                 "name": "Bollywood Retro 80s Gala",
                 "description": "Nostalgic disco & retro Bollywood theme celebrating timeless evergreen tracks and vintage glamour.",
-                "decor_elements": ["Vinyl record table accents", "Golden disco ball canopy", "Classic film posters"],
-                "dress_code": "Vintage Bollywood flair, polka dots, or bell-bottoms."
+                "decor_elements": [
+                    "Vinyl record table accents",
+                    "Golden disco ball canopy",
+                    "Classic film posters",
+                ],
+                "dress_code": "Vintage Bollywood flair, polka dots, or bell-bottoms.",
             },
             {
                 "name": "Sufi & Kebab Soirée",
                 "description": "An intimate courtyard mehfil featuring live qawwali or acoustic guitar, fragrant mogra, and slow-cooked delicacies.",
-                "decor_elements": ["Fresh mogra chandeliers", "Brass tealight holders", "Persian carpet runners"],
-                "dress_code": "Graceful Chikankari kurtas and flowing silk dupattas."
+                "decor_elements": [
+                    "Fresh mogra chandeliers",
+                    "Brass tealight holders",
+                    "Persian carpet runners",
+                ],
+                "dress_code": "Graceful Chikankari kurtas and flowing silk dupattas.",
             },
         ],
         "activities": [
             {
                 "title": "Live Acoustic & Unplugged Antakshari",
                 "description": "Curated unplugged Bollywood and folk acoustic jam session led by a guitarist.",
-                "suitable_for": "Adults & Friends"
+                "suitable_for": "Adults & Friends",
             },
             {
                 "title": "Interactive Cocktail / Mocktail Mixology Bar",
                 "description": "Bartender crafting personalized regional drinks with roasted cumin, kokum, and mint.",
-                "suitable_for": "Party Guests"
+                "suitable_for": "Party Guests",
             },
         ],
     },
@@ -341,32 +448,44 @@ BIRTHDAY_AGE_ADAPTATIONS: Dict[str, Dict] = {
             {
                 "name": "Golden Era Milestones (Shatabdi / Amrit Utsav)",
                 "description": "Dignified and heartwarming celebration honoring family roots, life achievements, and classical memories.",
-                "decor_elements": ["Family photo archival wall", "Fresh white mogra strings", "Comfortable cushioned chairs"],
-                "dress_code": "Traditional handloom silks, khadi kurtas, and elegant pastel sarees."
+                "decor_elements": [
+                    "Family photo archival wall",
+                    "Fresh white mogra strings",
+                    "Comfortable cushioned chairs",
+                ],
+                "dress_code": "Traditional handloom silks, khadi kurtas, and elegant pastel sarees.",
             },
             {
                 "name": "Devotional Bhajan & Sanskriti Milan",
                 "description": "Peaceful auspicious afternoon starting with traditional devotional hymns followed by celebratory high tea.",
-                "decor_elements": ["Brass oil lamps", "Fresh yellow marigold floral carpets", "Spiritual torans"],
-                "dress_code": "Traditional pure ethnic attire."
+                "decor_elements": [
+                    "Brass oil lamps",
+                    "Fresh yellow marigold floral carpets",
+                    "Spiritual torans",
+                ],
+                "dress_code": "Traditional pure ethnic attire.",
             },
             {
                 "name": "Vintage Haveli Heritage",
                 "description": "Classic courtyard setting reminiscent of childhood ancestral homes with gentle sitar and flute melodies.",
-                "decor_elements": ["Terracotta urli with floating rose petals", "Carved wooden screens", "Warm lantern glow"],
-                "dress_code": "Classic formal ethnic wear."
+                "decor_elements": [
+                    "Terracotta urli with floating rose petals",
+                    "Carved wooden screens",
+                    "Warm lantern glow",
+                ],
+                "dress_code": "Classic formal ethnic wear.",
             },
         ],
         "activities": [
             {
                 "title": "Memory Lane Audio-Visual Screening",
                 "description": "Curated digital slideshow tracing the celebrant's life journey, grandchildren messages, and vintage photos.",
-                "suitable_for": "All Generations & Grandchildren"
+                "suitable_for": "All Generations & Grandchildren",
             },
             {
                 "title": "Classic Oldies Antakshari & Bhajan Circle",
                 "description": "Gentle musical circle celebrating golden melodies from the 1960s to 1980s.",
-                "suitable_for": "Family Elders & Guests"
+                "suitable_for": "Family Elders & Guests",
             },
         ],
     },
@@ -375,32 +494,44 @@ BIRTHDAY_AGE_ADAPTATIONS: Dict[str, Dict] = {
             {
                 "name": "Neon Beats & Glow Night",
                 "description": "High-octane energetic party featuring UV glow accessories, neon graffiti backdrops, and upbeat DJ tracks.",
-                "decor_elements": ["UV blacklights", "Neon signboards", "Glow sticks and wristbands"],
-                "dress_code": "White or neon-colored casual streetwear."
+                "decor_elements": [
+                    "UV blacklights",
+                    "Neon signboards",
+                    "Glow sticks and wristbands",
+                ],
+                "dress_code": "White or neon-colored casual streetwear.",
             },
             {
                 "name": "Gaming Arcade & Pizza Fest",
                 "description": "Modern casual hangout with interactive console stations, VR booths, and artisanal finger food.",
-                "decor_elements": ["Arcade pixel art banners", "LED strip lighting", "Beanbag lounge zones"],
-                "dress_code": "Cool graphic tees and casual sneakers."
+                "decor_elements": [
+                    "Arcade pixel art banners",
+                    "LED strip lighting",
+                    "Beanbag lounge zones",
+                ],
+                "dress_code": "Cool graphic tees and casual sneakers.",
             },
             {
                 "name": "Bollywood Pop & Dance Party",
                 "description": "Current trending dance hits, instant 360-degree video booth, and mocktail bar.",
-                "decor_elements": ["Metallic shimmer curtains", "360-video spinner", "Selfie light rings"],
-                "dress_code": "Trendy party outfits with sparkle."
+                "decor_elements": [
+                    "Metallic shimmer curtains",
+                    "360-video spinner",
+                    "Selfie light rings",
+                ],
+                "dress_code": "Trendy party outfits with sparkle.",
             },
         ],
         "activities": [
             {
                 "title": "DJ Dance Battle & Beat Drop Challenge",
                 "description": "Friendly group dance choreography led by a teenage emcee.",
-                "suitable_for": "Teens & School Friends"
+                "suitable_for": "Teens & School Friends",
             },
             {
                 "title": "Instant 360-Degree Video Booth",
                 "description": "Slow-motion video capture platform with props for instant social media sharing.",
-                "suitable_for": "Teens"
+                "suitable_for": "Teens",
             },
         ],
     },
@@ -408,18 +539,27 @@ BIRTHDAY_AGE_ADAPTATIONS: Dict[str, Dict] = {
 
 
 def filter_menu_by_diet(
-    menus: List[MenuSection],
-    preferences: List[DietaryPreference],
-) -> List[MenuSection]:
+    menus: list[MenuSection],
+    preferences: list[DietaryPreference],
+) -> list[MenuSection]:
     """Filter out any dishes that violate the user's specific dietary requirements."""
-    is_veg = any(d in (DietaryPreference.VEGETARIAN, DietaryPreference.JAIN, DietaryPreference.SATTVIC, DietaryPreference.VEGAN) for d in preferences)
+    is_veg = any(
+        d
+        in (
+            DietaryPreference.VEGETARIAN,
+            DietaryPreference.JAIN,
+            DietaryPreference.SATTVIC,
+            DietaryPreference.VEGAN,
+        )
+        for d in preferences
+    )
     is_jain = DietaryPreference.JAIN in preferences
     is_vegan = DietaryPreference.VEGAN in preferences
 
-    sanitized_menus: List[MenuSection] = []
+    sanitized_menus: list[MenuSection] = []
 
     for section in menus:
-        safe_dishes: List[str] = []
+        safe_dishes: list[str] = []
         for dish in section.dishes:
             dish_lower = dish.lower()
 
@@ -477,7 +617,10 @@ def get_fallback_ideas(event: EventInput, budget: BudgetBreakdown) -> CreativeId
         menus = [
             MenuSection(
                 meal_type="Safe Baseline Spread",
-                dishes=["Steamed Fragrant Rice & Yellow Moong Dal Tadka", "Seasonal Fresh Fruit Platter with Mint"],
+                dishes=[
+                    "Steamed Fragrant Rice & Yellow Moong Dal Tadka",
+                    "Seasonal Fresh Fruit Platter with Mint",
+                ],
                 dietary_tags=["Safe Catering Spread"],
             )
         ]

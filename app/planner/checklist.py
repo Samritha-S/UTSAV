@@ -6,14 +6,12 @@ and large gathering thresholds.
 """
 
 from copy import deepcopy
-from typing import Dict, List, Set
 
 from app.models import (
     BookingStage,
     ChecklistCategory,
     ChecklistItem,
     ChecklistType,
-    DietaryPreference,
     EventInput,
     VendorChecklist,
     VenueSetting,
@@ -29,7 +27,7 @@ from app.planner.data import (
 )
 
 
-def _convert_item_dict(raw: Dict) -> ChecklistItem:
+def _convert_item_dict(raw: dict) -> ChecklistItem:
     """Safely convert a raw dictionary into a typed ChecklistItem schema."""
     return ChecklistItem(
         item_id=raw["id"],
@@ -51,15 +49,15 @@ def build_checklist(event: EventInput) -> VendorChecklist:
     base_category_slugs = list(EVENT_BASE_ALLOCATIONS[event_key].keys())
     base_templates = deepcopy(CHECKLIST_BASE_TEMPLATES.get(event_key, {}))
 
-    used_ids: Set[str] = set()
-    categories_output: List[ChecklistCategory] = []
+    used_ids: set[str] = set()
+    categories_output: list[ChecklistCategory] = []
 
     is_outdoor = event.indoor_outdoor in (VenueSetting.OUTDOOR, VenueSetting.BOTH)
     is_large = event.guest_count >= LARGE_GATHERING_VOLUNTEER_THRESHOLD
 
     for cat_slug in base_category_slugs:
         raw_items = base_templates.get(cat_slug, [])
-        cat_items: List[ChecklistItem] = []
+        cat_items: list[ChecklistItem] = []
 
         # Add base items
         for raw in raw_items:
@@ -107,7 +105,9 @@ def build_checklist(event: EventInput) -> VendorChecklist:
                         text=f"Request written quotation, payment milestone schedule, and backup contact for {display_label}.",
                         item_type=ChecklistType.DOCUMENT,
                         stage=BookingStage.QUOTE,
-                        what_to_ask=[f"What is the exact scope and deliverable timeline for {display_label}?"],
+                        what_to_ask=[
+                            f"What is the exact scope and deliverable timeline for {display_label}?"
+                        ],
                         what_to_verify=["Verify printed deposit receipt and stamped invoice."],
                     )
                 )

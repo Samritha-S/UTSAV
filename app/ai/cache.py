@@ -1,11 +1,10 @@
 """In-memory bounded LRU cache with Time-To-Live (TTL) for Gemini creative ideas."""
 
-from collections import OrderedDict
 import hashlib
 import json
 import threading
 import time
-from typing import Optional
+from collections import OrderedDict
 
 from app.models import CreativeIdeas, EventInput
 
@@ -19,7 +18,7 @@ class IdeasCache:
         self._cache: OrderedDict[str, tuple[float, CreativeIdeas]] = OrderedDict()
         self._lock = threading.Lock()
 
-    def get(self, key: str) -> Optional[CreativeIdeas]:
+    def get(self, key: str) -> CreativeIdeas | None:
         """Retrieve a cached entry if present and not expired."""
         with self._lock:
             if key not in self._cache:
@@ -59,7 +58,7 @@ class IdeasCache:
 ideas_cache = IdeasCache()
 
 
-def compute_cache_key(event: EventInput, refinement: Optional[str] = None) -> str:
+def compute_cache_key(event: EventInput, refinement: str | None = None) -> str:
     """Generate a deterministic SHA-256 fingerprint from sanitized event parameters and refinement."""
     key_dict = {
         "event_type": event.event_type.value,

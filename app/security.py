@@ -13,7 +13,6 @@ import logging
 import math
 import threading
 import time
-from typing import Dict, List, Optional, Tuple
 
 from fastapi import Request, status
 from fastapi.responses import JSONResponse
@@ -39,9 +38,9 @@ class SlidingWindowRateLimiter:
         self.window_seconds = window_seconds
         self.max_tracked_ips = max_tracked_ips
         self._lock = threading.Lock()
-        self._records: Dict[str, List[float]] = {}
+        self._records: dict[str, list[float]] = {}
 
-    def check_rate_limit(self, ip: str, now: Optional[float] = None) -> Tuple[bool, int]:
+    def check_rate_limit(self, ip: str, now: float | None = None) -> tuple[bool, int]:
         """Check if request is allowed for IP under sliding window.
 
         Args:
@@ -75,7 +74,7 @@ class SlidingWindowRateLimiter:
             self._records[ip] = valid_timestamps
             return True, 0
 
-    def evict_stale(self, now: Optional[float] = None) -> int:
+    def evict_stale(self, now: float | None = None) -> int:
         """Manually trigger stale IP eviction (useful for testing and memory maintenance)."""
         current_time = time.monotonic() if now is None else now
         with self._lock:
@@ -84,7 +83,8 @@ class SlidingWindowRateLimiter:
     def _evict_stale_locked(self, current_time: float) -> int:
         cutoff = current_time - self.window_seconds
         stale_keys = [
-            ip for ip, timestamps in self._records.items()
+            ip
+            for ip, timestamps in self._records.items()
             if not timestamps or timestamps[-1] <= cutoff
         ]
         for key in stale_keys:
@@ -93,8 +93,7 @@ class SlidingWindowRateLimiter:
         # If still exceeding capacity, evict the oldest least-recently active IPs
         if len(self._records) > self.max_tracked_ips:
             sorted_ips = sorted(
-                self._records.items(),
-                key=lambda item: item[1][-1] if item[1] else 0
+                self._records.items(), key=lambda item: item[1][-1] if item[1] else 0
             )
             excess = len(self._records) - self.max_tracked_ips
             for ip, _ in sorted_ips[:excess]:
@@ -224,6 +223,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
 class PayloadTooLargeError(Exception):
     """Internal sentinel exception when streaming body exceeds max size."""
+
     pass
 
 
@@ -303,4 +303,3 @@ class PayloadAndContentTypeMiddleware:
                 return await response(scope, receive, send)
 
         return await self.app(scope, receive, send)
-

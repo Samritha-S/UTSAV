@@ -1,6 +1,7 @@
 """Smoke tests for Utsav Planner application and schema validation."""
 
 from datetime import date, timedelta
+
 import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError

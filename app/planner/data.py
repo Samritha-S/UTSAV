@@ -5,13 +5,13 @@ for Indian event planning, not real commercial quotations or contracted rates.
 These constants ensure deterministic planning without hidden magic numbers.
 """
 
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 # =====================================================================
 # Single Source of Truth: Category Slugs to Display Labels
 # =====================================================================
 
-CATEGORY_LABELS: Dict[str, Dict[str, str]] = {
+CATEGORY_LABELS: dict[str, dict[str, str]] = {
     "wedding": {
         "venue_infrastructure": "Venue & Infrastructure",
         "catering_hospitality": "Catering & Hospitality",
@@ -48,79 +48,79 @@ def get_category_label(event_type: str, category_slug: str) -> str:
 # Base Category Allocations (Pre-Contingency, each event type sums to 100.0)
 # =====================================================================
 
-EVENT_BASE_ALLOCATIONS: Dict[str, Dict[str, Tuple[float, str]]] = {
+EVENT_BASE_ALLOCATIONS: dict[str, dict[str, tuple[float, str]]] = {
     "wedding": {
         "venue_infrastructure": (
             25.0,
-            "Mandap setup, banquet/lawn rental, seating, ambient lighting, and essential facilities."
+            "Mandap setup, banquet/lawn rental, seating, ambient lighting, and essential facilities.",
         ),
         "catering_hospitality": (
             35.0,
-            "Multi-course regional feast, welcome beverages, live food stations, and service crew."
+            "Multi-course regional feast, welcome beverages, live food stations, and service crew.",
         ),
         "decor_floral": (
             12.0,
-            "Fresh marigold and traditional flowers, entrance arch, stage backdrop, and table accents."
+            "Fresh marigold and traditional flowers, entrance arch, stage backdrop, and table accents.",
         ),
         "photography_cinematography": (
             8.0,
-            "Candid photographer, traditional camera crew, drone shots, and highlight album."
+            "Candid photographer, traditional camera crew, drone shots, and highlight album.",
         ),
         "attire_grooming": (
             10.0,
-            "Bridal/groom wedding attire, ceremonial jewellery styling, and artist packages."
+            "Bridal/groom wedding attire, ceremonial jewellery styling, and artist packages.",
         ),
         "ceremony_rituals": (
             5.0,
-            "Pandit/priest honorarium, samagri, havan materials, and auspicious puja items."
+            "Pandit/priest honorarium, samagri, havan materials, and auspicious puja items.",
         ),
         "entertainment_music": (
             5.0,
-            "DJ, dhol players, sound equipment, and sangeet choreography essentials."
+            "DJ, dhol players, sound equipment, and sangeet choreography essentials.",
         ),
     },
     "birthday": {
         "food_beverages": (
             40.0,
-            "Buffet spread, kids/adult beverages, party starters, and service staff."
+            "Buffet spread, kids/adult beverages, party starters, and service staff.",
         ),
         "venue_decor": (
             25.0,
-            "Party hall or lawn rental, balloon styling, thematic banner, and lighting."
+            "Party hall or lawn rental, balloon styling, thematic banner, and lighting.",
         ),
         "entertainment_activities": (
             15.0,
-            "Emcee/anchor, games coordinator, magic show, tattoo/mehendi artist, or music."
+            "Emcee/anchor, games coordinator, magic show, tattoo/mehendi artist, or music.",
         ),
         "cake_confectionery": (
             8.0,
-            "Custom-designed themed birthday cake, dessert table treats, and candles."
+            "Custom-designed themed birthday cake, dessert table treats, and candles.",
         ),
         "return_gifts": (
             12.0,
-            "Personalized party favors, branded gift hampers, or activity kits for attendees."
+            "Personalized party favors, branded gift hampers, or activity kits for attendees.",
         ),
     },
     "community": {
         "venue_permits_security": (
             20.0,
-            "Ground/auditorium rental, local authority permissions, police NOC, and security marshals."
+            "Ground/auditorium rental, local authority permissions, police NOC, and security marshals.",
         ),
         "sound_lighting_stage": (
             25.0,
-            "Heavy-duty PA system, stage trussing, spotlights, generator backup, and mic consoles."
+            "Heavy-duty PA system, stage trussing, spotlights, generator backup, and mic consoles.",
         ),
         "food_prasadam_water": (
             30.0,
-            "Community kitchen / langar / prasadam distribution, drinking water dispensers, and biodegradable cutlery."
+            "Community kitchen / langar / prasadam distribution, drinking water dispensers, and biodegradable cutlery.",
         ),
         "festive_decor_ambience": (
             15.0,
-            "Fabric drapery, decorative entrance gate, torans, fairy lights, and seating tents."
+            "Fabric drapery, decorative entrance gate, torans, fairy lights, and seating tents.",
         ),
         "volunteer_logistics": (
             10.0,
-            "Signage banners, first aid booth, volunteer t-shirts/badges, crowd control barriers, and sanitization."
+            "Signage banners, first aid booth, volunteer t-shirts/badges, crowd control barriers, and sanitization.",
         ),
     },
 }
@@ -129,13 +129,13 @@ EVENT_BASE_ALLOCATIONS: Dict[str, Dict[str, Tuple[float, str]]] = {
 # City Tier Multipliers & Category Weight Adjustments
 # =====================================================================
 
-CITY_TIER_MULTIPLIERS: Dict[str, float] = {
-    "metro": 1.25,   # Mumbai, Delhi NCR, Bengaluru, Hyderabad, Chennai, Kolkata, Pune
-    "tier2": 1.00,   # Jaipur, Lucknow, Ahmedabad, Chandigarh, Kochi, etc.
-    "tier3": 0.80,   # Smaller towns and district centers
+CITY_TIER_MULTIPLIERS: dict[str, float] = {
+    "metro": 1.25,  # Mumbai, Delhi NCR, Bengaluru, Hyderabad, Chennai, Kolkata, Pune
+    "tier2": 1.00,  # Jaipur, Lucknow, Ahmedabad, Chandigarh, Kochi, etc.
+    "tier3": 0.80,  # Smaller towns and district centers
 }
 
-CITY_TIER_CATEGORY_WEIGHT_MODIFIERS: Dict[str, Dict[str, float]] = {
+CITY_TIER_CATEGORY_WEIGHT_MODIFIERS: dict[str, dict[str, float]] = {
     "metro": {
         "venue_infrastructure": 1.10,
         "venue_decor": 1.10,
@@ -162,18 +162,18 @@ CITY_TIER_CATEGORY_WEIGHT_MODIFIERS: Dict[str, Dict[str, float]] = {
 # Seasonality Multipliers & Calendar Bands
 # =====================================================================
 
-PEAK_WEDDING_MONTHS: List[int] = [1, 2, 11, 12]
-PEAK_FESTIVE_MONTHS: List[int] = [9, 10, 11]
-OFF_SEASON_MONTHS: List[int] = [5, 6, 7, 8]
+PEAK_WEDDING_MONTHS: list[int] = [1, 2, 11, 12]
+PEAK_FESTIVE_MONTHS: list[int] = [9, 10, 11]
+OFF_SEASON_MONTHS: list[int] = [5, 6, 7, 8]
 
-SEASON_COST_MULTIPLIERS: Dict[str, float] = {
+SEASON_COST_MULTIPLIERS: dict[str, float] = {
     "peak_wedding": 1.20,
     "peak_festive": 1.15,
     "regular": 1.00,
     "off_season": 0.88,
 }
 
-PEAK_SEASON_CATEGORY_MODIFIERS: Dict[str, float] = {
+PEAK_SEASON_CATEGORY_MODIFIERS: dict[str, float] = {
     "venue_infrastructure": 1.12,
     "venue_decor": 1.10,
     "venue_permits_security": 1.10,
@@ -186,7 +186,7 @@ PEAK_SEASON_CATEGORY_MODIFIERS: Dict[str, float] = {
 # Environment Adjustments (Indoor vs Outdoor)
 # =====================================================================
 
-OUTDOOR_CATEGORY_MODIFIERS: Dict[str, float] = {
+OUTDOOR_CATEGORY_MODIFIERS: dict[str, float] = {
     "venue_infrastructure": 1.10,
     "decor_floral": 1.10,
     "sound_lighting_stage": 1.12,
@@ -204,7 +204,7 @@ GUEST_TIERS = {
     "mega": (801, 5000),
 }
 
-GUEST_COUNT_CATEGORY_MODIFIERS: Dict[str, Dict[str, float]] = {
+GUEST_COUNT_CATEGORY_MODIFIERS: dict[str, dict[str, float]] = {
     "intimate": {
         "catering_hospitality": 0.88,
         "food_beverages": 0.90,
@@ -234,7 +234,7 @@ GUEST_COUNT_CATEGORY_MODIFIERS: Dict[str, Dict[str, float]] = {
 # Dietary Preference Adjustments
 # =====================================================================
 
-DIETARY_CATERING_MODIFIERS: Dict[str, float] = {
+DIETARY_CATERING_MODIFIERS: dict[str, float] = {
     "jain": 1.04,
     "vegan": 1.05,
     "non-veg": 1.06,
@@ -247,7 +247,7 @@ DIETARY_CATERING_MODIFIERS: Dict[str, float] = {
 # Realistic Cost-per-Guest Floors (INR)
 # =====================================================================
 
-BASE_BUDGET_FLOORS_PER_GUEST_INR: Dict[str, float] = {
+BASE_BUDGET_FLOORS_PER_GUEST_INR: dict[str, float] = {
     "wedding": 1200.0,
     "birthday": 350.0,
     "community": 150.0,
@@ -267,7 +267,7 @@ CRUNCH_THRESHOLD_DAYS = 7
 DUE_SOON_DAYS_THRESHOLD = 14
 LARGE_GATHERING_VOLUNTEER_THRESHOLD = 300
 
-TIMELINE_TASK_TEMPLATES: Dict[str, List[Dict[str, Any]]] = {
+TIMELINE_TASK_TEMPLATES: dict[str, list[dict[str, Any]]] = {
     "wedding": [
         {
             "id": "wed_venue",
@@ -276,7 +276,7 @@ TIMELINE_TASK_TEMPLATES: Dict[str, List[Dict[str, Any]]] = {
             "lead_time_days": 180,
             "priority": "critical",
             "dependencies": [],
-            "alternative_advice": "Check municipal halls, society banquets, or consider an off-peak weekday date."
+            "alternative_advice": "Check municipal halls, society banquets, or consider an off-peak weekday date.",
         },
         {
             "id": "wed_priest",
@@ -285,7 +285,7 @@ TIMELINE_TASK_TEMPLATES: Dict[str, List[Dict[str, Any]]] = {
             "lead_time_days": 150,
             "priority": "critical",
             "dependencies": [],
-            "alternative_advice": "Approach local community temple purohits or trusted family elders for auspicious lagna windows."
+            "alternative_advice": "Approach local community temple purohits or trusted family elders for auspicious lagna windows.",
         },
         {
             "id": "wed_attire",
@@ -294,7 +294,7 @@ TIMELINE_TASK_TEMPLATES: Dict[str, List[Dict[str, Any]]] = {
             "lead_time_days": 120,
             "priority": "important",
             "dependencies": [],
-            "alternative_advice": "Opt for designer rental boutiques or off-the-rack heritage collections with express alteration."
+            "alternative_advice": "Opt for designer rental boutiques or off-the-rack heritage collections with express alteration.",
         },
         {
             "id": "wed_caterer",
@@ -303,7 +303,7 @@ TIMELINE_TASK_TEMPLATES: Dict[str, List[Dict[str, Any]]] = {
             "lead_time_days": 100,
             "priority": "critical",
             "dependencies": ["wed_venue"],
-            "alternative_advice": "Select an established local caterer's popular fixed-menu package with standard live counters."
+            "alternative_advice": "Select an established local caterer's popular fixed-menu package with standard live counters.",
         },
         {
             "id": "wed_decor",
@@ -312,7 +312,7 @@ TIMELINE_TASK_TEMPLATES: Dict[str, List[Dict[str, Any]]] = {
             "lead_time_days": 75,
             "priority": "important",
             "dependencies": ["wed_venue"],
-            "alternative_advice": "Switch to traditional fabric drapery, brass diyas, and locally sourced marigold florals."
+            "alternative_advice": "Switch to traditional fabric drapery, brass diyas, and locally sourced marigold florals.",
         },
         {
             "id": "wed_photo",
@@ -321,7 +321,7 @@ TIMELINE_TASK_TEMPLATES: Dict[str, List[Dict[str, Any]]] = {
             "lead_time_days": 60,
             "priority": "important",
             "dependencies": [],
-            "alternative_advice": "Book a reputable freelance candid photographer for a single-day primary event package."
+            "alternative_advice": "Book a reputable freelance candid photographer for a single-day primary event package.",
         },
         {
             "id": "wed_music",
@@ -330,7 +330,7 @@ TIMELINE_TASK_TEMPLATES: Dict[str, List[Dict[str, Any]]] = {
             "lead_time_days": 45,
             "priority": "optional",
             "dependencies": [],
-            "alternative_advice": "Curate high-energy digital family playlists and rent a powered sound console."
+            "alternative_advice": "Curate high-energy digital family playlists and rent a powered sound console.",
         },
         {
             "id": "wed_invites",
@@ -339,7 +339,7 @@ TIMELINE_TASK_TEMPLATES: Dict[str, List[Dict[str, Any]]] = {
             "lead_time_days": 35,
             "priority": "important",
             "dependencies": ["wed_venue", "wed_priest"],
-            "alternative_advice": "Send interactive digital WhatsApp video invites with Google Forms RSVP tracking."
+            "alternative_advice": "Send interactive digital WhatsApp video invites with Google Forms RSVP tracking.",
         },
         {
             "id": "wed_transport",
@@ -348,7 +348,7 @@ TIMELINE_TASK_TEMPLATES: Dict[str, List[Dict[str, Any]]] = {
             "lead_time_days": 25,
             "priority": "important",
             "dependencies": ["wed_venue"],
-            "alternative_advice": "Book rooms in budget business hotels within 3 km or arrange coordinated cab vouchers."
+            "alternative_advice": "Book rooms in budget business hotels within 3 km or arrange coordinated cab vouchers.",
         },
         {
             "id": "wed_headcount",
@@ -357,7 +357,7 @@ TIMELINE_TASK_TEMPLATES: Dict[str, List[Dict[str, Any]]] = {
             "lead_time_days": 10,
             "priority": "critical",
             "dependencies": ["wed_caterer"],
-            "alternative_advice": "Directly call key family representatives and lock count with a +5% buffer."
+            "alternative_advice": "Directly call key family representatives and lock count with a +5% buffer.",
         },
         {
             "id": "wed_coord",
@@ -366,7 +366,7 @@ TIMELINE_TASK_TEMPLATES: Dict[str, List[Dict[str, Any]]] = {
             "lead_time_days": 3,
             "priority": "critical",
             "dependencies": ["wed_priest"],
-            "alternative_advice": "Designate 2 responsible cousins to inspect samagri checklists and vendor arrival times."
+            "alternative_advice": "Designate 2 responsible cousins to inspect samagri checklists and vendor arrival times.",
         },
     ],
     "birthday": [
@@ -377,7 +377,7 @@ TIMELINE_TASK_TEMPLATES: Dict[str, List[Dict[str, Any]]] = {
             "lead_time_days": 30,
             "priority": "critical",
             "dependencies": [],
-            "alternative_advice": "Host at the society clubhouse, terrace, or living room with compact balloon arches."
+            "alternative_advice": "Host at the society clubhouse, terrace, or living room with compact balloon arches.",
         },
         {
             "id": "bday_food",
@@ -386,7 +386,7 @@ TIMELINE_TASK_TEMPLATES: Dict[str, List[Dict[str, Any]]] = {
             "lead_time_days": 21,
             "priority": "critical",
             "dependencies": ["bday_venue"],
-            "alternative_advice": "Order standardized party meal boxes or platters from a trusted local restaurant."
+            "alternative_advice": "Order standardized party meal boxes or platters from a trusted local restaurant.",
         },
         {
             "id": "bday_cake",
@@ -395,7 +395,7 @@ TIMELINE_TASK_TEMPLATES: Dict[str, List[Dict[str, Any]]] = {
             "lead_time_days": 14,
             "priority": "critical",
             "dependencies": [],
-            "alternative_advice": "Pick a delicious fresh-cream signature cake from an artisanal bakery with ready edible toppers."
+            "alternative_advice": "Pick a delicious fresh-cream signature cake from an artisanal bakery with ready edible toppers.",
         },
         {
             "id": "bday_entertainment",
@@ -404,7 +404,7 @@ TIMELINE_TASK_TEMPLATES: Dict[str, List[Dict[str, Any]]] = {
             "lead_time_days": 14,
             "priority": "important",
             "dependencies": [],
-            "alternative_advice": "Organize interactive family games (Pass the Parcel, Musical Chairs, Trivia) with fun mini-prizes."
+            "alternative_advice": "Organize interactive family games (Pass the Parcel, Musical Chairs, Trivia) with fun mini-prizes.",
         },
         {
             "id": "bday_invites",
@@ -413,7 +413,7 @@ TIMELINE_TASK_TEMPLATES: Dict[str, List[Dict[str, Any]]] = {
             "lead_time_days": 10,
             "priority": "important",
             "dependencies": ["bday_venue"],
-            "alternative_advice": "Broadcast personalized WhatsApp video cards requesting confirmed headcounts."
+            "alternative_advice": "Broadcast personalized WhatsApp video cards requesting confirmed headcounts.",
         },
         {
             "id": "bday_gifts",
@@ -422,7 +422,7 @@ TIMELINE_TASK_TEMPLATES: Dict[str, List[Dict[str, Any]]] = {
             "lead_time_days": 7,
             "priority": "important",
             "dependencies": [],
-            "alternative_advice": "Pick up age-appropriate storybooks, seed kits, or puzzle packs from local retail stores."
+            "alternative_advice": "Pick up age-appropriate storybooks, seed kits, or puzzle packs from local retail stores.",
         },
         {
             "id": "bday_headcount",
@@ -431,7 +431,7 @@ TIMELINE_TASK_TEMPLATES: Dict[str, List[Dict[str, Any]]] = {
             "lead_time_days": 3,
             "priority": "critical",
             "dependencies": ["bday_food"],
-            "alternative_advice": "Lock final numbers with a 10% snack buffer for unexpected sibling arrivals."
+            "alternative_advice": "Lock final numbers with a 10% snack buffer for unexpected sibling arrivals.",
         },
     ],
     "community": [
@@ -442,7 +442,7 @@ TIMELINE_TASK_TEMPLATES: Dict[str, List[Dict[str, Any]]] = {
             "lead_time_days": 60,
             "priority": "critical",
             "dependencies": [],
-            "alternative_advice": "Verify the current local rules with the relevant municipal ward office or jurisdictional police station."
+            "alternative_advice": "Verify the current local rules with the relevant municipal ward office or jurisdictional police station.",
         },
         {
             "id": "comm_ground",
@@ -451,7 +451,7 @@ TIMELINE_TASK_TEMPLATES: Dict[str, List[Dict[str, Any]]] = {
             "lead_time_days": 45,
             "priority": "critical",
             "dependencies": ["comm_permits"],
-            "alternative_advice": "Verify ground usage and permission guidelines with the society management committee or local land authority."
+            "alternative_advice": "Verify ground usage and permission guidelines with the society management committee or local land authority.",
         },
         {
             "id": "comm_sound",
@@ -460,7 +460,7 @@ TIMELINE_TASK_TEMPLATES: Dict[str, List[Dict[str, Any]]] = {
             "lead_time_days": 30,
             "priority": "critical",
             "dependencies": [],
-            "alternative_advice": "Contract local sound vendor for compact dual-speaker PA setup and a silent diesel generator."
+            "alternative_advice": "Contract local sound vendor for compact dual-speaker PA setup and a silent diesel generator.",
         },
         {
             "id": "comm_stage",
@@ -469,7 +469,7 @@ TIMELINE_TASK_TEMPLATES: Dict[str, List[Dict[str, Any]]] = {
             "lead_time_days": 21,
             "priority": "important",
             "dependencies": ["comm_ground"],
-            "alternative_advice": "Use modular steel risers draped in saffron/golden fabric with fairy light strings."
+            "alternative_advice": "Use modular steel risers draped in saffron/golden fabric with fairy light strings.",
         },
         {
             "id": "comm_food",
@@ -478,7 +478,7 @@ TIMELINE_TASK_TEMPLATES: Dict[str, List[Dict[str, Any]]] = {
             "lead_time_days": 15,
             "priority": "critical",
             "dependencies": [],
-            "alternative_advice": "Partner with a community trust kitchen or local halwai for hygienic pre-packed prasadam."
+            "alternative_advice": "Partner with a community trust kitchen or local halwai for hygienic pre-packed prasadam.",
         },
         {
             "id": "comm_volunteers",
@@ -487,7 +487,7 @@ TIMELINE_TASK_TEMPLATES: Dict[str, List[Dict[str, Any]]] = {
             "lead_time_days": 10,
             "priority": "critical",
             "dependencies": [],
-            "alternative_advice": "Form dedicated WhatsApp groups assigning leads for crowd queueing, stage, and prasadam lines."
+            "alternative_advice": "Form dedicated WhatsApp groups assigning leads for crowd queueing, stage, and prasadam lines.",
         },
         {
             "id": "comm_publicity",
@@ -496,7 +496,7 @@ TIMELINE_TASK_TEMPLATES: Dict[str, List[Dict[str, Any]]] = {
             "lead_time_days": 7,
             "priority": "important",
             "dependencies": [],
-            "alternative_advice": "Post digital event flyers on resident notice boards and WhatsApp community channels."
+            "alternative_advice": "Post digital event flyers on resident notice boards and WhatsApp community channels.",
         },
         {
             "id": "comm_safety",
@@ -505,7 +505,7 @@ TIMELINE_TASK_TEMPLATES: Dict[str, List[Dict[str, Any]]] = {
             "lead_time_days": 4,
             "priority": "critical",
             "dependencies": [],
-            "alternative_advice": "Keep certified fire extinguishers accessible and assign volunteers wearing high-vis badges."
+            "alternative_advice": "Keep certified fire extinguishers accessible and assign volunteers wearing high-vis badges.",
         },
         {
             "id": "comm_cleanup",
@@ -514,7 +514,7 @@ TIMELINE_TASK_TEMPLATES: Dict[str, List[Dict[str, Any]]] = {
             "lead_time_days": 2,
             "priority": "critical",
             "dependencies": [],
-            "alternative_advice": "Set up labeled wet/dry disposal bins and verify collection schedules with local sanitation services."
+            "alternative_advice": "Set up labeled wet/dry disposal bins and verify collection schedules with local sanitation services.",
         },
     ],
 }
@@ -523,7 +523,7 @@ TIMELINE_TASK_TEMPLATES: Dict[str, List[Dict[str, Any]]] = {
 # Vendor Diligence Checklist Templates (Slugs as Keys)
 # =====================================================================
 
-CHECKLIST_BASE_TEMPLATES: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
+CHECKLIST_BASE_TEMPLATES: dict[str, dict[str, list[dict[str, Any]]]] = {
     "wedding": {
         "venue_infrastructure": [
             {
@@ -533,11 +533,11 @@ CHECKLIST_BASE_TEMPLATES: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
                 "stage": "shortlist",
                 "what_to_ask": [
                     "What is the maximum sanctioned power load?",
-                    "Is silent generator fuel included in the venue rental quote?"
+                    "Is silent generator fuel included in the venue rental quote?",
                 ],
                 "what_to_verify": [
                     "Check operational condition of bridal green rooms and attached washroom cleanliness."
-                ]
+                ],
             },
             {
                 "id": "wed_chk_venue_2",
@@ -546,12 +546,12 @@ CHECKLIST_BASE_TEMPLATES: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
                 "stage": "book",
                 "what_to_ask": [
                     "What is the refund policy if dates must be rescheduled due to family emergencies?",
-                    "Are there curfew penalties for events extending past late evening hours?"
+                    "Are there curfew penalties for events extending past late evening hours?",
                 ],
                 "what_to_verify": [
                     "Verify written booking confirmation with stamped advance payment receipt.",
-                    "Verify the current local rules with the relevant authority regarding evening noise cutoffs."
-                ]
+                    "Verify the current local rules with the relevant authority regarding evening noise cutoffs.",
+                ],
             },
         ],
         "catering_hospitality": [
@@ -562,12 +562,12 @@ CHECKLIST_BASE_TEMPLATES: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
                 "stage": "shortlist",
                 "what_to_ask": [
                     "Can we sample live counter items prior to locking the contract?",
-                    "What is the per-plate rate and does it include cutlery, live counter gas, and service staff?"
+                    "What is the per-plate rate and does it include cutlery, live counter gas, and service staff?",
                 ],
                 "what_to_verify": [
                     "Verify valid FSSAI food safety license or registration certificate with the catering vendor.",
-                    "Verify backup plan if guest arrival exceeds planned headcount by 10-15%."
-                ]
+                    "Verify backup plan if guest arrival exceeds planned headcount by 10-15%.",
+                ],
             },
             {
                 "id": "wed_chk_cater_2",
@@ -579,7 +579,7 @@ CHECKLIST_BASE_TEMPLATES: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
                 ],
                 "what_to_verify": [
                     "Ensure itemized written invoice stating dish counts, mineral water cans, and server uniforms."
-                ]
+                ],
             },
         ],
         "decor_floral": [
@@ -590,11 +590,11 @@ CHECKLIST_BASE_TEMPLATES: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
                 "stage": "quote",
                 "what_to_ask": [
                     "Are flowers 100% fresh or mixed with artificial silk varieties?",
-                    "What time will the setup team get access to the venue on the event morning?"
+                    "What time will the setup team get access to the venue on the event morning?",
                 ],
                 "what_to_verify": [
                     "Ensure structural safety of mandap pillars and heavy hanging chandeliers."
-                ]
+                ],
             },
         ],
         "photography_cinematography": [
@@ -605,11 +605,11 @@ CHECKLIST_BASE_TEMPLATES: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
                 "stage": "quote",
                 "what_to_ask": [
                     "How many candid vs traditional photographers and cinematographers will be present?",
-                    "What is the expected turnaround time for the teaser reel and the final album?"
+                    "What is the expected turnaround time for the teaser reel and the final album?",
                 ],
                 "what_to_verify": [
                     "Review full unedited wedding album samples from recent client shoots, not just portfolio highlights."
-                ]
+                ],
             },
         ],
         "attire_grooming": [
@@ -623,7 +623,7 @@ CHECKLIST_BASE_TEMPLATES: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
                 ],
                 "what_to_verify": [
                     "Check cosmetic product brands used to prevent unexpected skin allergies."
-                ]
+                ],
             },
         ],
         "ceremony_rituals": [
@@ -634,11 +634,11 @@ CHECKLIST_BASE_TEMPLATES: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
                 "stage": "confirm",
                 "what_to_ask": [
                     "What is the comprehensive list of havan and lagna items the family needs to procure?",
-                    "What is the priest honorarium (dakshina) and arrival timing on the wedding morning?"
+                    "What is the priest honorarium (dakshina) and arrival timing on the wedding morning?",
                 ],
                 "what_to_verify": [
                     "Confirm date and muhurtham hours with priest BEFORE signing the binding venue agreement."
-                ]
+                ],
             },
         ],
         "entertainment_music": [
@@ -649,11 +649,11 @@ CHECKLIST_BASE_TEMPLATES: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
                 "stage": "confirm",
                 "what_to_ask": [
                     "Can we submit a preferred sangeet song list?",
-                    "Is a wireless mic provided for family speeches and announcements?"
+                    "Is a wireless mic provided for family speeches and announcements?",
                 ],
                 "what_to_verify": [
                     "Verify the current local rules with the relevant authority regarding loudspeaker volume limits and evening hours."
-                ]
+                ],
             },
         ],
     },
@@ -666,11 +666,11 @@ CHECKLIST_BASE_TEMPLATES: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
                 "stage": "quote",
                 "what_to_ask": [
                     "Are starter options mild and suitable for young children?",
-                    "What are the beverage replenishment and refill terms?"
+                    "What are the beverage replenishment and refill terms?",
                 ],
                 "what_to_verify": [
                     "Ensure clean FSSAI registration and hygienic food handling practices by staff."
-                ]
+                ],
             },
         ],
         "venue_decor": [
@@ -681,11 +681,11 @@ CHECKLIST_BASE_TEMPLATES: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
                 "stage": "book",
                 "what_to_ask": [
                     "Are double-sided tape and balloon arches permitted on the walls?",
-                    "What is the venue cleanup fee and deposit refund procedure?"
+                    "What is the venue cleanup fee and deposit refund procedure?",
                 ],
                 "what_to_verify": [
                     "Inspect child-safe electrical sockets and emergency exit accessibility."
-                ]
+                ],
             },
         ],
         "entertainment_activities": [
@@ -696,11 +696,11 @@ CHECKLIST_BASE_TEMPLATES: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
                 "stage": "book",
                 "what_to_ask": [
                     "What age-appropriate games will be conducted for the children?",
-                    "Does the entertainer bring their own wireless speaker and microphone?"
+                    "Does the entertainer bring their own wireless speaker and microphone?",
                 ],
                 "what_to_verify": [
                     "Confirm entertainer's punctual arrival 30 minutes before guest invitation time."
-                ]
+                ],
             },
         ],
         "cake_confectionery": [
@@ -714,7 +714,7 @@ CHECKLIST_BASE_TEMPLATES: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
                 ],
                 "what_to_verify": [
                     "Verify correct spelling of the name and age numeral on the cake topper."
-                ]
+                ],
             },
         ],
         "return_gifts": [
@@ -728,7 +728,7 @@ CHECKLIST_BASE_TEMPLATES: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
                 ],
                 "what_to_verify": [
                     "Maintain a 15% buffer in return gift bags so no child attendee is left empty-handed."
-                ]
+                ],
             },
         ],
     },
@@ -744,7 +744,7 @@ CHECKLIST_BASE_TEMPLATES: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
                 ],
                 "what_to_verify": [
                     "Verify the current local rules with the relevant municipal ward and police station authorities."
-                ]
+                ],
             },
             {
                 "id": "comm_chk_permit_2",
@@ -756,7 +756,7 @@ CHECKLIST_BASE_TEMPLATES: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
                 ],
                 "what_to_verify": [
                     "Verify written sanction from society management regarding dates and timings."
-                ]
+                ],
             },
         ],
         "sound_lighting_stage": [
@@ -767,11 +767,11 @@ CHECKLIST_BASE_TEMPLATES: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
                 "stage": "book",
                 "what_to_ask": [
                     "What are the recommended sound coverage requirements for the expected gathering size?",
-                    "How many backup microphones and audio patch cords are included?"
+                    "How many backup microphones and audio patch cords are included?",
                 ],
                 "what_to_verify": [
                     "Verify silent diesel generator operational fuel capacity for continuous event operation."
-                ]
+                ],
             },
         ],
         "food_prasadam_water": [
@@ -785,7 +785,7 @@ CHECKLIST_BASE_TEMPLATES: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
                 ],
                 "what_to_verify": [
                     "Ensure adequate 20L commercial drinking water dispensers with paper cups across the ground."
-                ]
+                ],
             },
         ],
         "festive_decor_ambience": [
@@ -799,7 +799,7 @@ CHECKLIST_BASE_TEMPLATES: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
                 ],
                 "what_to_verify": [
                     "Check sturdy barricading between audience seating and active stage production areas."
-                ]
+                ],
             },
         ],
         "volunteer_logistics": [
@@ -813,14 +813,14 @@ CHECKLIST_BASE_TEMPLATES: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
                 ],
                 "what_to_verify": [
                     "Confirm fully stocked first-aid kit, accessible fire extinguishers, and post-event cleanup schedule."
-                ]
+                ],
             },
         ],
     },
 }
 
 # Adaptation Checklist Items (Slugs as Keys)
-OUTDOOR_CHECKLIST_ADDITIONS: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
+OUTDOOR_CHECKLIST_ADDITIONS: dict[str, dict[str, list[dict[str, Any]]]] = {
     "wedding": {
         "venue_infrastructure": [
             {
@@ -828,8 +828,12 @@ OUTDOOR_CHECKLIST_ADDITIONS: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
                 "text": "Review outdoor weatherproof tenting, monsoon rain gutters, and industrial pedestal misting fans.",
                 "item_type": "verify",
                 "stage": "book",
-                "what_to_ask": ["Is the German hangar tent 100% waterproof and rated for strong wind gusts?"],
-                "what_to_verify": ["Verify covered dry passage connecting parking, buffet area, and the mandap."]
+                "what_to_ask": [
+                    "Is the German hangar tent 100% waterproof and rated for strong wind gusts?"
+                ],
+                "what_to_verify": [
+                    "Verify covered dry passage connecting parking, buffet area, and the mandap."
+                ],
             }
         ]
     },
@@ -840,8 +844,12 @@ OUTDOOR_CHECKLIST_ADDITIONS: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
                 "text": "Confirm shade canopies, lawn mosquito repellent treatment, and power extension cables.",
                 "item_type": "verify",
                 "stage": "confirm",
-                "what_to_ask": ["Will shaded seating or gazebos be erected if daytime temperature rises?"],
-                "what_to_verify": ["Check that all outdoor electrical connections are elevated and covered."]
+                "what_to_ask": [
+                    "Will shaded seating or gazebos be erected if daytime temperature rises?"
+                ],
+                "what_to_verify": [
+                    "Check that all outdoor electrical connections are elevated and covered."
+                ],
             }
         ]
     },
@@ -852,14 +860,18 @@ OUTDOOR_CHECKLIST_ADDITIONS: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
                 "text": "Verify heavy-duty waterproof shamiana, ground drainage trenches, and fire exit clear zones.",
                 "item_type": "verify",
                 "stage": "book",
-                "what_to_ask": ["Are emergency vehicle pathways kept unobstructed by outdoor tent poles?"],
-                "what_to_verify": ["Verify the current local rules with the relevant fire authority regarding marquee permits."]
+                "what_to_ask": [
+                    "Are emergency vehicle pathways kept unobstructed by outdoor tent poles?"
+                ],
+                "what_to_verify": [
+                    "Verify the current local rules with the relevant fire authority regarding marquee permits."
+                ],
             }
         ]
-    }
+    },
 }
 
-DIETARY_CHECKLIST_ADDITIONS: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
+DIETARY_CHECKLIST_ADDITIONS: dict[str, dict[str, list[dict[str, Any]]]] = {
     "jain": {
         "wedding": {
             "catering_hospitality": [
@@ -868,8 +880,12 @@ DIETARY_CHECKLIST_ADDITIONS: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
                     "text": "Confirm strict Jain catering protocol: rootless vegetables (no onion, garlic, potato) and dedicated cookware.",
                     "item_type": "verify",
                     "stage": "confirm",
-                    "what_to_ask": ["Are dedicated kitchen utensils used exclusively for pure Jain food preparation?"],
-                    "what_to_verify": ["Verify early dining timing arrangements for guests observing Chauvihar (before sunset)."]
+                    "what_to_ask": [
+                        "Are dedicated kitchen utensils used exclusively for pure Jain food preparation?"
+                    ],
+                    "what_to_verify": [
+                        "Verify early dining timing arrangements for guests observing Chauvihar (before sunset)."
+                    ],
                 }
             ]
         },
@@ -880,8 +896,12 @@ DIETARY_CHECKLIST_ADDITIONS: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
                     "text": "Confirm eggless, gelatin-free birthday cake and labeled Jain snack counters.",
                     "item_type": "verify",
                     "stage": "confirm",
-                    "what_to_ask": ["Is the birthday cake certified 100% eggless with vegetarian emulsifiers?"],
-                    "what_to_verify": ["Ensure clear bilingual signage at live snack counters indicating Jain options."]
+                    "what_to_ask": [
+                        "Is the birthday cake certified 100% eggless with vegetarian emulsifiers?"
+                    ],
+                    "what_to_verify": [
+                        "Ensure clear bilingual signage at live snack counters indicating Jain options."
+                    ],
                 }
             ]
         },
@@ -892,11 +912,15 @@ DIETARY_CHECKLIST_ADDITIONS: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
                     "text": "Verify pure sattvic / Jain prasadam preparation using unadulterated ingredients.",
                     "item_type": "verify",
                     "stage": "confirm",
-                    "what_to_ask": ["Are all prasadam sweets prepared with pure desi ghee free from synthetic additives?"],
-                    "what_to_verify": ["Inspect packaging area hygiene for holy food distribution."]
+                    "what_to_ask": [
+                        "Are all prasadam sweets prepared with pure desi ghee free from synthetic additives?"
+                    ],
+                    "what_to_verify": [
+                        "Inspect packaging area hygiene for holy food distribution."
+                    ],
                 }
             ]
-        }
+        },
     },
     "vegan": {
         "wedding": {
@@ -906,12 +930,14 @@ DIETARY_CHECKLIST_ADDITIONS: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
                     "text": "Confirm dairy-free substitutes (tofu/soya chaap instead of paneer, coconut milk sweets).",
                     "item_type": "verify",
                     "stage": "confirm",
-                    "what_to_ask": ["Are dairy ghee and cream strictly omitted from designated vegan curries?"],
-                    "what_to_verify": ["Verify distinct buffet label cards for vegan attendees."]
+                    "what_to_ask": [
+                        "Are dairy ghee and cream strictly omitted from designated vegan curries?"
+                    ],
+                    "what_to_verify": ["Verify distinct buffet label cards for vegan attendees."],
                 }
             ]
         }
-    }
+    },
 }
 
 LARGE_GATHERING_CHECKLIST_ADDITION = {
@@ -919,6 +945,8 @@ LARGE_GATHERING_CHECKLIST_ADDITION = {
     "text": "Deploy dedicated crowd marshals, separate entrance/exit barricades, and medical first-aid on standby.",
     "item_type": "verify",
     "stage": "confirm",
-    "what_to_ask": ["What is the crowd evacuation and medical emergency response plan for 300+ attendees?"],
-    "what_to_verify": ["Verify marked emergency assembly points and working megaphone."]
+    "what_to_ask": [
+        "What is the crowd evacuation and medical emergency response plan for 300+ attendees?"
+    ],
+    "what_to_verify": ["Verify marked emergency assembly points and working megaphone."],
 }

@@ -1,6 +1,7 @@
 """Unit tests for the vendor vetting and regulatory checklist engine."""
 
 from datetime import date, timedelta
+
 import pytest
 
 from app.models import (
@@ -20,7 +21,9 @@ def future_date() -> date:
 
 
 @pytest.mark.parametrize("event_type", [EventType.WEDDING, EventType.BIRTHDAY, EventType.COMMUNITY])
-def test_all_budget_categories_covered_with_exact_key_matching(event_type: EventType, future_date: date):
+def test_all_budget_categories_covered_with_exact_key_matching(
+    event_type: EventType, future_date: date
+):
     """Verify that every single budget category key is covered 1-to-1 in the checklist."""
     event = EventInput(
         event_type=event_type,
@@ -53,7 +56,10 @@ def test_unique_item_ids_across_checklist(future_date: date):
         city="Delhi",
         city_tier=CityTier.METRO,
         indoor_outdoor=VenueSetting.OUTDOOR,  # Triggers outdoor items
-        dietary_preferences=[DietaryPreference.JAIN, DietaryPreference.VEGAN],  # Triggers dietary items
+        dietary_preferences=[
+            DietaryPreference.JAIN,
+            DietaryPreference.VEGAN,
+        ],  # Triggers dietary items
     )
 
     checklist = build_checklist(event)
@@ -123,7 +129,9 @@ def test_outdoor_and_dietary_adaptations(future_date: date):
         dietary_preferences=[DietaryPreference.JAIN],
     )
     outdoor_jain_chk = build_checklist(outdoor_jain_event)
-    outdoor_jain_item_ids = {item.item_id for cat in outdoor_jain_chk.categories for item in cat.items}
+    outdoor_jain_item_ids = {
+        item.item_id for cat in outdoor_jain_chk.categories for item in cat.items
+    }
     assert "adapt_outdoor_rain_plan" in outdoor_jain_item_ids
     assert "adapt_jain_wedding" in outdoor_jain_item_ids
 

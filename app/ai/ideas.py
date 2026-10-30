@@ -6,7 +6,6 @@ feasibility decisions remain strictly owned by the deterministic Python engine.
 
 import logging
 import re
-from typing import Optional
 
 from google import genai
 from google.genai import types
@@ -64,7 +63,7 @@ def _strip_html_and_markdown(text: str) -> str:
 def _sanitize_creative_ideas(
     payload: GeminiCreativeIdeasPayload,
     event: EventInput,
-) -> Optional[CreativeIdeas]:
+) -> CreativeIdeas | None:
     """Enforce list length caps, string limits, markdown/HTML stripping, and dietary safety."""
     # 1. Themes (max 4)
     sanitized_themes: list[ThemeIdea] = []
@@ -114,7 +113,9 @@ def _sanitize_creative_ideas(
             DecorIdea(
                 area=_strip_html_and_markdown(d.area)[:80],
                 concept=_strip_html_and_markdown(d.concept)[:250],
-                suggested_materials=[_strip_html_and_markdown(mat)[:80] for mat in d.suggested_materials[:4]],
+                suggested_materials=[
+                    _strip_html_and_markdown(mat)[:80] for mat in d.suggested_materials[:4]
+                ],
             )
         )
 
@@ -134,14 +135,16 @@ def _sanitize_creative_ideas(
 def construct_user_prompt(
     event: EventInput,
     budget: BudgetBreakdown,
-    refinement: Optional[str] = None,
+    refinement: str | None = None,
 ) -> str:
     """Build structured prompt passing budget allocations and safely delimited user text."""
     season = determine_seasonal_band(event.event_date, event.event_type)
 
     category_lines = []
     for cat in budget.categories:
-        category_lines.append(f"- {cat.name} ({cat.category_slug}): ₹{cat.allocated_inr:,} ({cat.percentage}%)")
+        category_lines.append(
+            f"- {cat.name} ({cat.category_slug}): ₹{cat.allocated_inr:,} ({cat.percentage}%)"
+        )
     categories_str = "\n".join(category_lines)
 
     dietary_str = ", ".join(d.value for d in event.dietary_preferences)
@@ -172,7 +175,7 @@ def construct_user_prompt(
 def generate_ideas(
     event: EventInput,
     budget: BudgetBreakdown,
-    refinement: Optional[str] = None,
+    refinement: str | None = None,
 ) -> CreativeIdeas:
     """Generate personalized creative ideas via Gemini or return curated fallback.
 
@@ -229,7 +232,9 @@ def generate_ideas(
         clean_ideas = _sanitize_creative_ideas(parsed_payload, event)
 
         if clean_ideas is None:
-            logger.warning("Creative ideas validation discarded output (e.g. empty menu); serving fallback.")
+            logger.warning(
+                "Creative ideas validation discarded output (e.g. empty menu); serving fallback."
+            )
             return get_fallback_ideas(event, budget)
 
         # 6. Store in cache (only successful AI ideas are cached; fallbacks are never cached)

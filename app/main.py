@@ -4,8 +4,8 @@ Coordinates deterministic planning engines, Gemini creative generation,
 rate limiting, security middleware, and single-page application static delivery.
 """
 
-from datetime import date, datetime
 import logging
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -69,9 +69,12 @@ if STATIC_DIR.exists():
 # ---------------------------------------------------------------------
 # Injectable Date Dependency
 # ---------------------------------------------------------------------
-KOLKATA_TZ = ZoneInfo("Asia/Kolkata")
- 
- 
+try:
+    KOLKATA_TZ = ZoneInfo("Asia/Kolkata")
+except Exception:  # pragma: no cover
+    KOLKATA_TZ = timezone(timedelta(hours=5, minutes=30))
+
+
 def get_today() -> date:
     """Return today's date in Asia/Kolkata time zone, injectable for deterministic testing."""
     return datetime.now(KOLKATA_TZ).date()
@@ -81,7 +84,9 @@ def get_today() -> date:
 # Standardized Error Handlers
 # ---------------------------------------------------------------------
 @app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+async def validation_exception_handler(
+    request: Request, exc: RequestValidationError
+) -> JSONResponse:
     """Format validation errors into standard error schema without leaking raw user input."""
     error_details = []
     for err in exc.errors():

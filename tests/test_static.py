@@ -10,9 +10,9 @@ Verifies:
 """
 
 import colorsys
-from pathlib import Path
 import re
-from xml.etree import ElementTree as ET
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -46,13 +46,19 @@ def test_static_files_served_with_correct_content_types(client):
     # Main JS module
     res_app_js = client.get("/static/app.js")
     assert res_app_js.status_code == 200
-    assert any(mime in res_app_js.headers.get("Content-Type", "") for mime in ["javascript", "text/javascript"])
+    assert any(
+        mime in res_app_js.headers.get("Content-Type", "")
+        for mime in ["javascript", "text/javascript"]
+    )
 
     # Sub-modules in static/js/
     for js_file in (STATIC_DIR / "js").glob("*.js"):
         res_sub = client.get(f"/static/js/{js_file.name}")
         assert res_sub.status_code == 200, f"Failed to serve /static/js/{js_file.name}"
-        assert any(mime in res_sub.headers.get("Content-Type", "") for mime in ["javascript", "text/javascript"])
+        assert any(
+            mime in res_sub.headers.get("Content-Type", "")
+            for mime in ["javascript", "text/javascript"]
+        )
 
 
 # ---------------------------------------------------------------------
@@ -65,12 +71,14 @@ def test_no_inline_scripts_or_style_attributes_in_index_html():
 
     # 1. No style="..." attributes
     style_attr_match = re.search(r'\bstyle\s*=\s*["\'][^"\']*["\']', content, re.IGNORECASE)
-    assert style_attr_match is None, f"Found forbidden inline style attribute: {style_attr_match.group(0)}"
+    assert style_attr_match is None, (
+        f"Found forbidden inline style attribute: {style_attr_match.group(0)}"
+    )
 
     # 2. No script tags with inline code (only external src permitted)
-    script_tags = re.findall(r'<script\b([^>]*)>(.*?)</script>', content, re.DOTALL | re.IGNORECASE)
+    script_tags = re.findall(r"<script\b([^>]*)>(.*?)</script>", content, re.DOTALL | re.IGNORECASE)
     for attrs, body in script_tags:
-        assert 'src=' in attrs, "Script tag must have a src attribute"
+        assert "src=" in attrs, "Script tag must have a src attribute"
         assert body.strip() == "", f"Found forbidden inline script code: {body.strip()}"
 
 
@@ -94,8 +102,16 @@ def test_no_forbidden_dom_injection_methods_in_javascript():
         code = js_path.read_text(encoding="utf-8")
         for token in forbidden_tokens:
             # Check for actual token usage, not comments
-            matches = [line for line in code.splitlines() if token in line and not line.strip().startswith("//") and not line.strip().startswith("*")]
-            assert not matches, f"Forbidden DOM mutation method '{token}' found in {js_path.name}: {matches}"
+            matches = [
+                line
+                for line in code.splitlines()
+                if token in line
+                and not line.strip().startswith("//")
+                and not line.strip().startswith("*")
+            ]
+            assert not matches, (
+                f"Forbidden DOM mutation method '{token}' found in {js_path.name}: {matches}"
+            )
 
 
 # ---------------------------------------------------------------------
@@ -116,7 +132,9 @@ def test_no_external_urls_in_static_files():
             if line_clean.startswith("//") or line_clean.startswith("*") or "w3.org" in line_clean:
                 continue
             external_refs = re.findall(r'https?://[^\s\'"]+', line_clean)
-            assert not external_refs, f"External URL found in {file_path.name}:{idx} -> {external_refs}"
+            assert not external_refs, (
+                f"External URL found in {file_path.name}:{idx} -> {external_refs}"
+            )
 
 
 # ---------------------------------------------------------------------
@@ -128,7 +146,7 @@ def test_all_form_controls_have_associated_labels():
     content = index_path.read_text(encoding="utf-8")
 
     # Find all input, select, textarea elements
-    controls = re.findall(r'<(input|select|textarea)\b([^>]*)>', content, re.IGNORECASE)
+    controls = re.findall(r"<(input|select|textarea)\b([^>]*)>", content, re.IGNORECASE)
     assert len(controls) >= 8, "Expected at least 8 form controls in index.html"
 
     # Find all label "for" attributes
@@ -144,7 +162,9 @@ def test_all_form_controls_have_associated_labels():
         id_match = re.search(r'\bid=["\']([^"\']+)["\']', attrs, re.IGNORECASE)
         assert id_match is not None, f"Form control <{tag} {attrs}> is missing an id attribute"
         control_id = id_match.group(1)
-        assert control_id in label_fors, f"Form control id '{control_id}' does not have a corresponding <label for='{control_id}'>"
+        assert control_id in label_fors, (
+            f"Form control id '{control_id}' does not have a corresponding <label for='{control_id}'>"
+        )
 
 
 # ---------------------------------------------------------------------
@@ -158,8 +178,8 @@ def hex_to_hue_saturation(hex_color: str) -> tuple[float, float, float]:
     r = int(clean_hex[0:2], 16) / 255.0
     g = int(clean_hex[2:4], 16) / 255.0
     b = int(clean_hex[4:6], 16) / 255.0
-    h, l, s = colorsys.rgb_to_hls(r, g, b)
-    return h * 360.0, s, l
+    h, lightness, s = colorsys.rgb_to_hls(r, g, b)
+    return h * 360.0, s, lightness
 
 
 def test_css_contains_no_purple_range_hues():
@@ -168,7 +188,7 @@ def test_css_contains_no_purple_range_hues():
     css_content = css_path.read_text(encoding="utf-8")
 
     # Extract all hex colors (#RGB or #RRGGBB)
-    hex_colors = re.findall(r'#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\b', css_content)
+    hex_colors = re.findall(r"#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\b", css_content)
     assert len(hex_colors) > 0, "Expected hex colors in styles.css"
 
     for hex_val in hex_colors:
@@ -176,4 +196,6 @@ def test_css_contains_no_purple_range_hues():
         # Saturated colors in 255-320 range are purple/violet/lavender
         # Low saturation (< 0.12) or extreme lightness/darkness is warm gray/white/black
         is_purple = (255.0 <= hue <= 320.0) and (sat > 0.12) and (0.05 < light < 0.96)
-        assert not is_purple, f"Forbidden purple/violet hue found in styles.css: {hex_val} (hue={hue:.1f}°, sat={sat:.2f}, light={light:.2f})"
+        assert not is_purple, (
+            f"Forbidden purple/violet hue found in styles.css: {hex_val} (hue={hue:.1f}°, sat={sat:.2f}, light={light:.2f})"
+        )

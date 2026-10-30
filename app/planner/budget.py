@@ -7,14 +7,12 @@ method to ensure whole-rupee allocation with zero off-by-one drift.
 
 from datetime import date
 from math import floor
-from typing import Dict, List, Tuple
 
 from app.models import (
     BudgetBreakdown,
     BudgetCategory,
     BudgetFeasibility,
     CityTier,
-    DietaryPreference,
     EventInput,
     EventType,
     VenueSetting,
@@ -80,10 +78,10 @@ def calculate_contingency_percentage(event: EventInput) -> float:
     return min(max(contingency, CONTINGENCY_MIN_PCT), CONTINGENCY_MAX_PCT)
 
 
-def compute_category_weights(event: EventInput) -> Dict[str, float]:
+def compute_category_weights(event: EventInput) -> dict[str, float]:
     """Calculate normalized category weights accounting for tier, season, guest scale, and diet."""
     base_data = EVENT_BASE_ALLOCATIONS[event.event_type.value]
-    adjusted_weights: Dict[str, float] = {}
+    adjusted_weights: dict[str, float] = {}
 
     guest_tier = get_guest_count_tier(event.guest_count)
     city_modifiers = CITY_TIER_CATEGORY_WEIGHT_MODIFIERS.get(event.city_tier.value, {})
@@ -127,14 +125,14 @@ def compute_category_weights(event: EventInput) -> Dict[str, float]:
 
 def distribute_budget_largest_remainder(
     spendable_inr: int,
-    normalized_weights: Dict[str, float],
-) -> Dict[str, int]:
+    normalized_weights: dict[str, float],
+) -> dict[str, int]:
     """Distribute whole rupees using Hamilton's largest remainder method.
 
     Guarantees sum(allocated.values()) == spendable_inr with zero penny/rupee drift.
     """
-    integer_allocations: Dict[str, int] = {}
-    remainders: List[Tuple[float, str]] = []
+    integer_allocations: dict[str, int] = {}
+    remainders: list[tuple[float, str]] = []
 
     allocated_so_far = 0
     for category, weight in normalized_weights.items():
@@ -193,14 +191,16 @@ def evaluate_feasibility(
             suggestions=[],
         )
 
-    suggestions: List[str] = []
+    suggestions: list[str] = []
 
     if ratio >= FEASIBILITY_RATIO_TIGHT:
         verdict = "tight"
         is_feasible = True
 
         # Computed guest recommendation for comfortable per-head margin
-        target_guests = max(5, int(total_budget_inr / (floor_per_guest * FEASIBILITY_RATIO_COMFORTABLE)))
+        target_guests = max(
+            5, int(total_budget_inr / (floor_per_guest * FEASIBILITY_RATIO_COMFORTABLE))
+        )
         suggestions.append(
             f"Trimming your guest list from {event.guest_count} to approximately {target_guests} "
             f"would elevate your per-head spend to comfortable hospitality benchmarks."
@@ -263,7 +263,7 @@ def allocate_budget(event: EventInput) -> BudgetBreakdown:
         cat: desc for cat, (_, desc) in EVENT_BASE_ALLOCATIONS[event.event_type.value].items()
     }
 
-    categories: List[BudgetCategory] = []
+    categories: list[BudgetCategory] = []
     for category_slug, allocated_amount in allocated_shares.items():
         percentage = round((allocated_amount / total_budget_inr) * 100.0, 2)
         categories.append(

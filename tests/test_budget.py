@@ -1,6 +1,7 @@
 """Unit tests for the deterministic budget allocation engine and feasibility assessor."""
 
 from datetime import date, timedelta
+
 import pytest
 
 from app.models import (
@@ -14,8 +15,6 @@ from app.planner.budget import (
     allocate_budget,
     calculate_contingency_percentage,
     compute_category_weights,
-    evaluate_feasibility,
-    get_budget_floor,
 )
 
 

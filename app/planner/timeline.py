@@ -6,7 +6,6 @@ making scheduling math 100% deterministic and unit-testable without clock mockin
 
 from collections import deque
 from datetime import date, timedelta
-from typing import Dict, List, Optional, Set
 
 from app.models import (
     EventInput,
@@ -22,11 +21,11 @@ from app.planner.data import (
 )
 
 
-def compute_topological_ranks(templates: List[Dict]) -> Dict[str, int]:
+def compute_topological_ranks(templates: list[dict]) -> dict[str, int]:
     """Compute dependency depth rank for stable chronological sequencing."""
-    ranks: Dict[str, int] = {t["id"]: 0 for t in templates}
-    in_degrees: Dict[str, int] = {t["id"]: len(t.get("dependencies", [])) for t in templates}
-    adjacency: Dict[str, List[str]] = {t["id"]: [] for t in templates}
+    ranks: dict[str, int] = {t["id"]: 0 for t in templates}
+    in_degrees: dict[str, int] = {t["id"]: len(t.get("dependencies", [])) for t in templates}
+    adjacency: dict[str, list[str]] = {t["id"]: [] for t in templates}
 
     for t in templates:
         for dep in t.get("dependencies", []):
@@ -74,7 +73,7 @@ def build_timeline(event: EventInput, today: date) -> TimelineSchedule:
         active_templates = raw_templates
 
     # First pass: calculate target dates based on lead times
-    task_deadlines: Dict[str, date] = {}
+    task_deadlines: dict[str, date] = {}
     for t in active_templates:
         lead_time = t.get("lead_time_days", 0)
         task_deadlines[t["id"]] = event.event_date - timedelta(days=lead_time)
@@ -90,8 +89,8 @@ def build_timeline(event: EventInput, today: date) -> TimelineSchedule:
                     if task_deadlines[task_id] < task_deadlines[dep_id]:
                         task_deadlines[task_id] = task_deadlines[dep_id]
 
-    tasks: List[TimelineTask] = []
-    status_counts: Dict[str, int] = {
+    tasks: list[TimelineTask] = []
+    status_counts: dict[str, int] = {
         TaskStatus.ON_TRACK.value: 0,
         TaskStatus.DUE_SOON.value: 0,
         TaskStatus.OVERDUE_COMPRESSED.value: 0,
@@ -129,10 +128,12 @@ def build_timeline(event: EventInput, today: date) -> TimelineSchedule:
         )
 
     # Sort tasks primarily by deadline, secondarily by topological dependency rank, and then task ID
-    tasks.sort(key=lambda item: (item.target_date, topological_ranks.get(item.task_id, 0), item.task_id))
+    tasks.sort(
+        key=lambda item: (item.target_date, topological_ranks.get(item.task_id, 0), item.task_id)
+    )
 
     # Identify single most urgent next action
-    most_urgent: Optional[str] = None
+    most_urgent: str | None = None
     # Prioritize first overdue or due_soon task, fallback to the earliest task
     for task in tasks:
         if task.status in (TaskStatus.OVERDUE_COMPRESSED, TaskStatus.DUE_SOON):
@@ -141,7 +142,7 @@ def build_timeline(event: EventInput, today: date) -> TimelineSchedule:
     if not most_urgent and tasks:
         most_urgent = f"{tasks[0].title} (Target: {tasks[0].target_date.isoformat()})"
 
-    crunch_summary: Optional[str] = None
+    crunch_summary: str | None = None
     if is_crunch:
         crunch_summary = (
             f"Crunch planning mode active: Event is in {days_remaining} day{'s' if days_remaining != 1 else ''}. "
@@ -160,7 +161,7 @@ def build_timeline(event: EventInput, today: date) -> TimelineSchedule:
     )
 
 
-def generate_timeline(event: EventInput, today: Optional[date] = None) -> TimelineSchedule:
+def generate_timeline(event: EventInput, today: date | None = None) -> TimelineSchedule:
     """Public wrapper providing backward compatibility if today is omitted."""
     anchor_date = today or date.today()
     return build_timeline(event, anchor_date)
