@@ -14,6 +14,7 @@ from app.models import (
     DecorIdea,
     DietaryPreference,
     EventInput,
+    EventType,
     MenuSection,
     ThemeIdea,
 )
@@ -300,6 +301,112 @@ CURATED_IDEAS_DATA: Dict[str, Dict] = {
 }
 
 
+BIRTHDAY_AGE_ADAPTATIONS: Dict[str, Dict] = {
+    "adults": {
+        "themes": [
+            {
+                "name": "Evening Ghazal & Rooftop Lounge",
+                "description": "Sophisticated evening gathering with warm acoustic melodies, ambient fairy lights, and artisanal mocktails.",
+                "decor_elements": ["Warm Edison bulbs", "Moroccan candle lanterns", "Plush low-seating diwans"],
+                "dress_code": "Smart festive evening wear / Indo-western fusion."
+            },
+            {
+                "name": "Bollywood Retro 80s Gala",
+                "description": "Nostalgic disco & retro Bollywood theme celebrating timeless evergreen tracks and vintage glamour.",
+                "decor_elements": ["Vinyl record table accents", "Golden disco ball canopy", "Classic film posters"],
+                "dress_code": "Vintage Bollywood flair, polka dots, or bell-bottoms."
+            },
+            {
+                "name": "Sufi & Kebab Soirée",
+                "description": "An intimate courtyard mehfil featuring live qawwali or acoustic guitar, fragrant mogra, and slow-cooked delicacies.",
+                "decor_elements": ["Fresh mogra chandeliers", "Brass tealight holders", "Persian carpet runners"],
+                "dress_code": "Graceful Chikankari kurtas and flowing silk dupattas."
+            },
+        ],
+        "activities": [
+            {
+                "title": "Live Acoustic & Unplugged Antakshari",
+                "description": "Curated unplugged Bollywood and folk acoustic jam session led by a guitarist.",
+                "suitable_for": "Adults & Friends"
+            },
+            {
+                "title": "Interactive Cocktail / Mocktail Mixology Bar",
+                "description": "Bartender crafting personalized regional drinks with roasted cumin, kokum, and mint.",
+                "suitable_for": "Party Guests"
+            },
+        ],
+    },
+    "seniors": {
+        "themes": [
+            {
+                "name": "Golden Era Milestones (Shatabdi / Amrit Utsav)",
+                "description": "Dignified and heartwarming celebration honoring family roots, life achievements, and classical memories.",
+                "decor_elements": ["Family photo archival wall", "Fresh white mogra strings", "Comfortable cushioned chairs"],
+                "dress_code": "Traditional handloom silks, khadi kurtas, and elegant pastel sarees."
+            },
+            {
+                "name": "Devotional Bhajan & Sanskriti Milan",
+                "description": "Peaceful auspicious afternoon starting with traditional devotional hymns followed by celebratory high tea.",
+                "decor_elements": ["Brass oil lamps", "Fresh yellow marigold floral carpets", "Spiritual torans"],
+                "dress_code": "Traditional pure ethnic attire."
+            },
+            {
+                "name": "Vintage Haveli Heritage",
+                "description": "Classic courtyard setting reminiscent of childhood ancestral homes with gentle sitar and flute melodies.",
+                "decor_elements": ["Terracotta urli with floating rose petals", "Carved wooden screens", "Warm lantern glow"],
+                "dress_code": "Classic formal ethnic wear."
+            },
+        ],
+        "activities": [
+            {
+                "title": "Memory Lane Audio-Visual Screening",
+                "description": "Curated digital slideshow tracing the celebrant's life journey, grandchildren messages, and vintage photos.",
+                "suitable_for": "All Generations & Grandchildren"
+            },
+            {
+                "title": "Classic Oldies Antakshari & Bhajan Circle",
+                "description": "Gentle musical circle celebrating golden melodies from the 1960s to 1980s.",
+                "suitable_for": "Family Elders & Guests"
+            },
+        ],
+    },
+    "teens": {
+        "themes": [
+            {
+                "name": "Neon Beats & Glow Night",
+                "description": "High-octane energetic party featuring UV glow accessories, neon graffiti backdrops, and upbeat DJ tracks.",
+                "decor_elements": ["UV blacklights", "Neon signboards", "Glow sticks and wristbands"],
+                "dress_code": "White or neon-colored casual streetwear."
+            },
+            {
+                "name": "Gaming Arcade & Pizza Fest",
+                "description": "Modern casual hangout with interactive console stations, VR booths, and artisanal finger food.",
+                "decor_elements": ["Arcade pixel art banners", "LED strip lighting", "Beanbag lounge zones"],
+                "dress_code": "Cool graphic tees and casual sneakers."
+            },
+            {
+                "name": "Bollywood Pop & Dance Party",
+                "description": "Current trending dance hits, instant 360-degree video booth, and mocktail bar.",
+                "decor_elements": ["Metallic shimmer curtains", "360-video spinner", "Selfie light rings"],
+                "dress_code": "Trendy party outfits with sparkle."
+            },
+        ],
+        "activities": [
+            {
+                "title": "DJ Dance Battle & Beat Drop Challenge",
+                "description": "Friendly group dance choreography led by a teenage emcee.",
+                "suitable_for": "Teens & School Friends"
+            },
+            {
+                "title": "Instant 360-Degree Video Booth",
+                "description": "Slow-motion video capture platform with props for instant social media sharing.",
+                "suitable_for": "Teens"
+            },
+        ],
+    },
+}
+
+
 def filter_menu_by_diet(
     menus: List[MenuSection],
     preferences: List[DietaryPreference],
@@ -330,6 +437,7 @@ def filter_menu_by_diet(
 
             safe_dishes.append(dish)
 
+        # Drop menu courses that end up with no dishes
         if safe_dishes:
             sanitized_menus.append(
                 MenuSection(
@@ -350,9 +458,30 @@ def get_fallback_ideas(event: EventInput, budget: BudgetBreakdown) -> CreativeId
     event_key = event.event_type.value
     raw_data = deepcopy(CURATED_IDEAS_DATA.get(event_key, CURATED_IDEAS_DATA["wedding"]))
 
+    # Apply age-group specific themes/activities if birthday and age_group specified
+    if event.event_type == EventType.BIRTHDAY and event.age_group:
+        age_key = event.age_group.value
+        if age_key in BIRTHDAY_AGE_ADAPTATIONS:
+            age_data = BIRTHDAY_AGE_ADAPTATIONS[age_key]
+            if "themes" in age_data:
+                raw_data["themes"] = age_data["themes"]
+            if "activities" in age_data:
+                raw_data["activities"] = age_data["activities"]
+
     themes = [ThemeIdea(**t) for t in raw_data["themes"]]
     raw_menus = [MenuSection(**m) for m in raw_data["menus"]]
     menus = filter_menu_by_diet(raw_menus, event.dietary_preferences)
+
+    # Ensure at least one safe menu section remains
+    if not menus:
+        menus = [
+            MenuSection(
+                meal_type="Safe Baseline Spread",
+                dishes=["Steamed Fragrant Rice & Yellow Moong Dal Tadka", "Seasonal Fresh Fruit Platter with Mint"],
+                dietary_tags=["Safe Catering Spread"],
+            )
+        ]
+
     activities = [ActivityIdea(**a) for a in raw_data["activities"]]
     decor = [DecorIdea(**d) for d in raw_data["decor"]]
 

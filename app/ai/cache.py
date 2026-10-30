@@ -70,6 +70,7 @@ def compute_cache_key(event: EventInput, refinement: Optional[str] = None) -> st
         "city_tier": event.city_tier.value,
         "dietary_preferences": sorted([d.value for d in event.dietary_preferences]),
         "indoor_outdoor": event.indoor_outdoor.value,
+        "age_group": event.age_group.value if event.age_group else None,
         "theme_notes": event.theme_notes.strip().lower(),
         "refinement": (refinement or "").strip().lower(),
     }

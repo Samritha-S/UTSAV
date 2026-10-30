@@ -20,6 +20,7 @@ from app.models import (
     CreativeIdeas,
     DecorIdea,
     EventInput,
+    GeminiCreativeIdeasPayload,
     MenuSection,
     ThemeIdea,
     sanitize_text,
@@ -60,11 +61,14 @@ def _strip_html_and_markdown(text: str) -> str:
     return cleaned.strip()
 
 
-def _sanitize_creative_ideas(ideas: CreativeIdeas, event: EventInput) -> CreativeIdeas:
+def _sanitize_creative_ideas(
+    payload: GeminiCreativeIdeasPayload,
+    event: EventInput,
+) -> Optional[CreativeIdeas]:
     """Enforce list length caps, string limits, markdown/HTML stripping, and dietary safety."""
     # 1. Themes (max 4)
     sanitized_themes: list[ThemeIdea] = []
-    for t in ideas.themes[:4]:
+    for t in payload.themes[:4]:
         sanitized_themes.append(
             ThemeIdea(
                 name=_strip_html_and_markdown(t.name)[:80],
@@ -76,7 +80,7 @@ def _sanitize_creative_ideas(ideas: CreativeIdeas, event: EventInput) -> Creativ
 
     # 2. Menu suggestions (max 5 sections, max 6 dishes each, filtered by diet)
     sanitized_menus: list[MenuSection] = []
-    for m in ideas.menu_suggestions[:5]:
+    for m in payload.menu_suggestions[:5]:
         clean_dishes = [_strip_html_and_markdown(d)[:100] for d in m.dishes[:6]]
         clean_tags = [_strip_html_and_markdown(tag)[:50] for tag in m.dietary_tags[:3]]
         sanitized_menus.append(
@@ -88,9 +92,13 @@ def _sanitize_creative_ideas(ideas: CreativeIdeas, event: EventInput) -> Creativ
         )
     safe_menus = filter_menu_by_diet(sanitized_menus, event.dietary_preferences)
 
+    # If no menu remains after dietary filtering, reject model output
+    if not safe_menus:
+        return None
+
     # 3. Activities (max 5)
     sanitized_activities: list[ActivityIdea] = []
-    for a in ideas.activities[:5]:
+    for a in payload.activities[:5]:
         sanitized_activities.append(
             ActivityIdea(
                 title=_strip_html_and_markdown(a.title)[:80],
@@ -101,7 +109,7 @@ def _sanitize_creative_ideas(ideas: CreativeIdeas, event: EventInput) -> Creativ
 
     # 4. Decor ideas (max 5)
     sanitized_decor: list[DecorIdea] = []
-    for d in ideas.decor_ideas[:5]:
+    for d in payload.decor_ideas[:5]:
         sanitized_decor.append(
             DecorIdea(
                 area=_strip_html_and_markdown(d.area)[:80],
@@ -111,7 +119,7 @@ def _sanitize_creative_ideas(ideas: CreativeIdeas, event: EventInput) -> Creativ
         )
 
     # 5. Budget fit note (max 400 chars)
-    clean_note = _strip_html_and_markdown(ideas.budget_fit_note)[:400]
+    clean_note = _strip_html_and_markdown(payload.budget_fit_note)[:400]
 
     return CreativeIdeas(
         themes=sanitized_themes,
@@ -137,6 +145,7 @@ def construct_user_prompt(
     categories_str = "\n".join(category_lines)
 
     dietary_str = ", ".join(d.value for d in event.dietary_preferences)
+    age_str = f"Target Age Demographic: {event.age_group.value}\n" if event.age_group else ""
     sanitized_theme_notes = sanitize_text(event.theme_notes)[:400]
     sanitized_refinement = sanitize_text(refinement or "")[:200]
 
@@ -146,6 +155,7 @@ def construct_user_prompt(
         f"Event Date: {event.event_date.isoformat()} (Season: {season})\n"
         f"Guest Count: {event.guest_count} attendees\n"
         f"Venue Environment: {event.indoor_outdoor.value}\n"
+        f"{age_str}"
         f"Dietary Requirements: {dietary_str}\n\n"
         f"Allocated Budgets (INR):\n"
         f"- Total Budget: ₹{budget.total_budget_inr:,}\n"
@@ -198,7 +208,7 @@ def generate_ideas(
             system_instruction=SYSTEM_INSTRUCTION,
             temperature=0.7,
             response_mime_type="application/json",
-            response_schema=CreativeIdeas,
+            response_schema=GeminiCreativeIdeasPayload,
             http_options=types.HttpOptions(timeout=timeout_ms),
         )
 
@@ -212,11 +222,15 @@ def generate_ideas(
             logger.warning("Empty response received from Gemini; serving fallback.")
             return get_fallback_ideas(event, budget)
 
-        # 4. Validate output with Pydantic
-        parsed_ideas = CreativeIdeas.model_validate_json(response.text)
+        # 4. Validate output with Pydantic (using schema without source field)
+        parsed_payload = GeminiCreativeIdeasPayload.model_validate_json(response.text)
 
         # 5. Post-validation sanitization (length caps, HTML/link stripping, dietary filtering)
-        clean_ideas = _sanitize_creative_ideas(parsed_ideas, event)
+        clean_ideas = _sanitize_creative_ideas(parsed_payload, event)
+
+        if clean_ideas is None:
+            logger.warning("Creative ideas validation discarded output (e.g. empty menu); serving fallback.")
+            return get_fallback_ideas(event, budget)
 
         # 6. Store in cache (only successful AI ideas are cached; fallbacks are never cached)
         ideas_cache.set(cache_key, clean_ideas)

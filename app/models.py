@@ -1,6 +1,6 @@
 """Data models and Pydantic schemas for Utsav Planner."""
 
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from enum import Enum
 import re
 from typing import Annotated, Dict, List, Literal, Optional
@@ -42,6 +42,15 @@ class DietaryPreference(str, Enum):
     HALAL = "halal"
 
 
+class AgeGroup(str, Enum):
+    """Target age demographic primarily for tailoring birthday themes and activities."""
+
+    KIDS = "kids"
+    TEENS = "teens"
+    ADULTS = "adults"
+    SENIORS = "seniors"
+
+
 class TaskStatus(str, Enum):
     """Status indicating how compressed a planning task timeline is."""
 
@@ -78,11 +87,13 @@ class ChecklistType(str, Enum):
 
 
 def sanitize_text(value: str) -> str:
-    """Strip control characters, excessive whitespace, and potential prompt injection wrappers."""
+    """Strip control characters, excessive whitespace, and neutralize angle brackets to prevent XML delimiter tag breakout."""
     if not value:
         return ""
     # Remove ASCII control characters except newline and tab
     cleaned = re.sub(r"[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]", "", value)
+    # Neutralize angle brackets so user input cannot spoof or prematurely close XML delimiter tags
+    cleaned = cleaned.replace("<", "&lt;").replace(">", "&gt;")
     # Strip markdown code-block fences to prevent prompt breakout
     cleaned = cleaned.replace("```", "'''")
     return cleaned.strip()
@@ -133,6 +144,10 @@ class EventInput(BaseModel):
         default=VenueSetting.INDOOR,
         description="Venue environment preference (indoor, outdoor, or both)."
     )
+    age_group: Optional[AgeGroup] = Field(
+        default=None,
+        description="Target age demographic (kids, teens, adults, seniors), primarily for birthdays."
+    )
     theme_notes: str = Field(
         default="",
         max_length=400,
@@ -154,7 +169,7 @@ class EventInput(BaseModel):
     @field_validator("theme_notes")
     @classmethod
     def validate_theme_notes(cls, value: str) -> str:
-        """Sanitize theme notes to prevent control character injection."""
+        """Sanitize theme notes to prevent control character and tag injection."""
         return sanitize_text(value)
 
     @field_validator("event_date")
@@ -177,8 +192,8 @@ class RefineRequest(BaseModel):
     refinement_prompt: str = Field(
         ...,
         min_length=3,
-        max_length=300,
-        description="User instructions for modification (e.g. 'more traditional', 'reduce catering')."
+        max_length=200,
+        description="User instructions for modification (max 200 chars)."
     )
 
     @field_validator("refinement_prompt")
@@ -358,8 +373,18 @@ class DecorIdea(BaseModel):
     suggested_materials: List[str] = Field(..., description="Cost-effective or traditional materials.")
 
 
+class GeminiCreativeIdeasPayload(BaseModel):
+    """Schema enforced on Gemini model output; strictly excludes the server-managed source field."""
+
+    themes: List[ThemeIdea] = Field(..., description="Theme concepts.")
+    menu_suggestions: List[MenuSection] = Field(..., description="Tailored food selections.")
+    activities: List[ActivityIdea] = Field(..., description="Engaging event elements.")
+    decor_ideas: List[DecorIdea] = Field(..., description="Decor arrangements.")
+    budget_fit_note: str = Field(..., description="Note on how these creative choices respect the budget.")
+
+
 class CreativeIdeas(BaseModel):
-    """Personalized creative package produced by Gemini or curated fallback."""
+    """Personalized creative package with server-controlled source tag."""
 
     themes: List[ThemeIdea] = Field(..., description="Theme concepts.")
     menu_suggestions: List[MenuSection] = Field(..., description="Tailored food selections.")
@@ -385,7 +410,7 @@ class PlanResponse(BaseModel):
     checklist: VendorChecklist = Field(..., description="Vendor diligence checklist.")
     ideas: CreativeIdeas = Field(..., description="Personalized creative recommendations.")
     generated_at: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(timezone.utc),
         description="Timestamp when the plan was synthesized."
     )
 
