@@ -1,0 +1,136 @@
+/* Utsav Planner Design System - Celebratory Indian Palette (Marigold, Coral, Deep Green on Light) */
+:root {
+  --color-marigold: #e67e00;
+  --color-marigold-hover: #c96d00;
+  --color-coral: #d94828;
+  --color-deep-green: #1b5e20;
+  --color-green-light: #e8f5e9;
+  --color-gold-tint: #fff8e1;
+  --color-bg-light: #faf8f5;
+  --color-surface: #ffffff;
+  --color-text-main: #212121;
+  --color-text-muted: #595959;
+  --color-border: #e0d7cd;
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--color-bg-light);
+  color: var(--color-text-main);
+  line-height: 1.6;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.app-header {
+  background-color: var(--color-surface);
+  border-bottom: 2px solid var(--color-marigold);
+  padding: 1rem 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.header-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.logo-symbol {
+  font-size: 2rem;
+}
+
+.logo-text h1 {
+  font-size: 1.5rem;
+  color: var(--color-deep-green);
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.logo-text .tagline {
+  font-size: 0.85rem;
+  color: var(--color-coral);
+  font-weight: 600;
+}
+
+.badge {
+  background-color: var(--color-gold-tint);
+  color: var(--color-deep-green);
+  border: 1px solid var(--color-marigold);
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Main Container */
+.main-container {
+  max-width: 1100px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  flex: 1;
+  width: 100%;
+}
+
+.hero-section {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.hero-section h2 {
+  font-size: 1.8rem;
+  color: var(--color-deep-green);
+  margin-bottom: 0.5rem;
+}
+
+.hero-section p {
+  color: var(--color-text-muted);
+  max-width: 650px;
+  margin: 0 auto;
+}
+
+.app-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 2rem;
+  box-shadow: var(--shadow-md);
+}
+
+/* Footer */
+.app-footer {
+  background-color: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  padding: 1.25rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+/* Accessible focus styling */
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 3px solid var(--color-marigold);
+  outline-offset: 2px;
+}
