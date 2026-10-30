@@ -36,6 +36,7 @@ from app.planner.data import (
     PEAK_FESTIVE_MONTHS,
     PEAK_SEASON_CATEGORY_MODIFIERS,
     PEAK_WEDDING_MONTHS,
+    get_category_label,
 )
 
 
@@ -114,7 +115,7 @@ def compute_category_weights(event: EventInput) -> Dict[str, float]:
         weight *= guest_modifiers.get(category, 1.0)
 
         # Apply Dietary modifier to food/catering categories
-        if any(food_kw in category for food_kw in ("Catering", "Food", "Prasadam")):
+        if any(food_kw in category.lower() for food_kw in ("catering", "food", "prasadam")):
             weight *= catering_diet_mod
 
         adjusted_weights[category] = weight
@@ -263,14 +264,15 @@ def allocate_budget(event: EventInput) -> BudgetBreakdown:
     }
 
     categories: List[BudgetCategory] = []
-    for category_name, allocated_amount in allocated_shares.items():
+    for category_slug, allocated_amount in allocated_shares.items():
         percentage = round((allocated_amount / total_budget_inr) * 100.0, 2)
         categories.append(
             BudgetCategory(
-                name=category_name,
+                category_slug=category_slug,
+                name=get_category_label(event.event_type.value, category_slug),
                 allocated_inr=allocated_amount,
                 percentage=percentage,
-                description=base_descriptions.get(category_name, ""),
+                description=base_descriptions.get(category_slug, ""),
             )
         )
 

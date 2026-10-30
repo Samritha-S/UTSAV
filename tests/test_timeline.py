@@ -88,26 +88,34 @@ def test_status_transitions_and_alternative_advice(fixed_today: date):
             assert len(task.advice.strip()) > 10
 
 
-def test_two_weeks_away_crunch_plan(fixed_today: date):
-    """Verify that an event 10 days away collapses into a crunch plan of critical tasks."""
-    event_date = fixed_today + timedelta(days=10)
-    event = EventInput(
+def test_crunch_plan_threshold_seven_days(fixed_today: date):
+    """Verify that an event <= 7 days away collapses into a crunch plan of critical tasks."""
+    # 5 days away -> Crunch plan active
+    crunch_event = EventInput(
         event_type=EventType.WEDDING,
-        event_date=event_date,
+        event_date=fixed_today + timedelta(days=5),
         guest_count=80,
         budget_inr=600000,
         city="Delhi",
     )
-
-    schedule = build_timeline(event, today=fixed_today)
-
-    assert schedule.is_crunch_plan is True
-    assert schedule.crunch_summary is not None
-    assert "Crunch planning mode active" in schedule.crunch_summary
-
-    # In crunch mode, only critical tasks are included
-    for task in schedule.tasks:
+    crunch_sched = build_timeline(crunch_event, today=fixed_today)
+    assert crunch_sched.is_crunch_plan is True
+    assert crunch_sched.crunch_summary is not None
+    assert "Crunch planning mode active" in crunch_sched.crunch_summary
+    for task in crunch_sched.tasks:
         assert task.priority.value == "critical"
+
+    # 10 days away -> Regular plan (above 7-day crunch threshold)
+    normal_event = EventInput(
+        event_type=EventType.WEDDING,
+        event_date=fixed_today + timedelta(days=10),
+        guest_count=80,
+        budget_inr=600000,
+        city="Delhi",
+    )
+    normal_sched = build_timeline(normal_event, today=fixed_today)
+    assert normal_sched.is_crunch_plan is False
+    assert normal_sched.crunch_summary is None
 
 
 def test_today_and_tomorrow_edge_cases(fixed_today: date):

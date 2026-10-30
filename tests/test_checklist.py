@@ -33,13 +33,14 @@ def test_all_budget_categories_covered_with_exact_key_matching(event_type: Event
 
     checklist = build_checklist(event)
 
-    budget_keys = list(EVENT_BASE_ALLOCATIONS[event_type.value].keys())
-    checklist_keys = [cat.category_name for cat in checklist.categories]
+    budget_slugs = list(EVENT_BASE_ALLOCATIONS[event_type.value].keys())
+    checklist_slugs = [cat.category_slug for cat in checklist.categories]
 
-    assert checklist_keys == budget_keys
-    # Every category must have at least one checklist item
+    assert checklist_slugs == budget_slugs
+    # Every category must have at least one checklist item and a non-empty human label
     for cat in checklist.categories:
         assert len(cat.items) > 0
+        assert len(cat.category_name) > 0
 
 
 def test_unique_item_ids_across_checklist(future_date: date):

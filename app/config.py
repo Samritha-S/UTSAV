@@ -19,8 +19,10 @@ class Settings:
         self.environment: str = os.getenv("ENVIRONMENT", "development")
         self.port: int = int(os.getenv("PORT", "8000"))
         self.gemini_api_key: str = os.getenv("GEMINI_API_KEY", "").strip()
+        self.gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash").strip()
+        self.gemini_timeout_seconds: int = int(os.getenv("GEMINI_TIMEOUT_SECONDS", "20"))
         self.rate_limit_per_minute: int = int(os.getenv("RATE_LIMIT_PER_MINUTE", "30"))
-        self.cache_size: int = int(os.getenv("CACHE_SIZE", "100"))
+        self.cache_size: int = int(os.getenv("CACHE_SIZE", "128"))
 
     @property
     def has_gemini_key(self) -> bool:

@@ -126,9 +126,9 @@ def test_metro_vs_tier3_weight_shifts():
     tier3_weights = compute_category_weights(tier3_event)
 
     # In Metros, Venue takes a higher percentage of the pie than in Tier 3
-    assert metro_weights["Venue & Infrastructure"] > tier3_weights["Venue & Infrastructure"]
+    assert metro_weights["venue_infrastructure"] > tier3_weights["venue_infrastructure"]
     # In Tier 3, Catering takes a higher percentage than in Metro
-    assert tier3_weights["Catering & Hospitality"] > metro_weights["Catering & Hospitality"]
+    assert tier3_weights["catering_hospitality"] > metro_weights["catering_hospitality"]
 
 
 def test_feasibility_evaluation_verdicts():

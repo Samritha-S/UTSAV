@@ -25,6 +25,7 @@ from app.planner.data import (
     LARGE_GATHERING_CHECKLIST_ADDITION,
     LARGE_GATHERING_VOLUNTEER_THRESHOLD,
     OUTDOOR_CHECKLIST_ADDITIONS,
+    get_category_label,
 )
 
 
@@ -47,7 +48,7 @@ def build_checklist(event: EventInput) -> VendorChecklist:
     can join budget splits with actionable checklists.
     """
     event_key = event.event_type.value
-    base_category_keys = list(EVENT_BASE_ALLOCATIONS[event_key].keys())
+    base_category_slugs = list(EVENT_BASE_ALLOCATIONS[event_key].keys())
     base_templates = deepcopy(CHECKLIST_BASE_TEMPLATES.get(event_key, {}))
 
     used_ids: Set[str] = set()
@@ -56,8 +57,8 @@ def build_checklist(event: EventInput) -> VendorChecklist:
     is_outdoor = event.indoor_outdoor in (VenueSetting.OUTDOOR, VenueSetting.BOTH)
     is_large = event.guest_count >= LARGE_GATHERING_VOLUNTEER_THRESHOLD
 
-    for cat_name in base_category_keys:
-        raw_items = base_templates.get(cat_name, [])
+    for cat_slug in base_category_slugs:
+        raw_items = base_templates.get(cat_slug, [])
         cat_items: List[ChecklistItem] = []
 
         # Add base items
@@ -68,7 +69,7 @@ def build_checklist(event: EventInput) -> VendorChecklist:
 
         # Apply Outdoor Adaptations
         if is_outdoor and event_key in OUTDOOR_CHECKLIST_ADDITIONS:
-            outdoor_adds = OUTDOOR_CHECKLIST_ADDITIONS[event_key].get(cat_name, [])
+            outdoor_adds = OUTDOOR_CHECKLIST_ADDITIONS[event_key].get(cat_slug, [])
             for raw in outdoor_adds:
                 if raw["id"] not in used_ids:
                     used_ids.add(raw["id"])
@@ -79,15 +80,15 @@ def build_checklist(event: EventInput) -> VendorChecklist:
             diet_key = diet.value
             if diet_key in DIETARY_CHECKLIST_ADDITIONS:
                 event_diet_adds = DIETARY_CHECKLIST_ADDITIONS[diet_key].get(event_key, {})
-                diet_items = event_diet_adds.get(cat_name, [])
+                diet_items = event_diet_adds.get(cat_slug, [])
                 for raw in diet_items:
                     if raw["id"] not in used_ids:
                         used_ids.add(raw["id"])
                         cat_items.append(_convert_item_dict(raw))
 
         # Apply Large Gathering Adaptations (to security/volunteer categories)
-        if is_large and any(kw in cat_name for kw in ("Security", "Volunteer", "Infrastructure")):
-            large_item_id = f"large_gathering_{cat_name.replace(' ', '_').lower()}"
+        if is_large and any(kw in cat_slug for kw in ("security", "volunteer", "infrastructure")):
+            large_item_id = f"large_gathering_{cat_slug}"
             if large_item_id not in used_ids:
                 used_ids.add(large_item_id)
                 item_dict = dict(LARGE_GATHERING_CHECKLIST_ADDITION)
@@ -96,23 +97,25 @@ def build_checklist(event: EventInput) -> VendorChecklist:
 
         # If a category template was empty, provide standard vendor diligence items
         if not cat_items:
-            fallback_id = f"fallback_{cat_name.replace(' ', '_').lower()}"
+            fallback_id = f"fallback_{cat_slug}"
             if fallback_id not in used_ids:
                 used_ids.add(fallback_id)
+                display_label = get_category_label(event_key, cat_slug)
                 cat_items.append(
                     ChecklistItem(
                         item_id=fallback_id,
-                        text=f"Request written quotation, payment milestone schedule, and backup contact for {cat_name}.",
+                        text=f"Request written quotation, payment milestone schedule, and backup contact for {display_label}.",
                         item_type=ChecklistType.DOCUMENT,
                         stage=BookingStage.QUOTE,
-                        what_to_ask=[f"What is the exact scope and deliverable timeline for {cat_name}?"],
+                        what_to_ask=[f"What is the exact scope and deliverable timeline for {display_label}?"],
                         what_to_verify=["Verify printed deposit receipt and stamped invoice."],
                     )
                 )
 
         categories_output.append(
             ChecklistCategory(
-                category_name=cat_name,
+                category_slug=cat_slug,
+                category_name=get_category_label(event_key, cat_slug),
                 items=cat_items,
             )
         )

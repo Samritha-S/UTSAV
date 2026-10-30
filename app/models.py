@@ -198,7 +198,8 @@ class RefineRequest(BaseModel):
 class BudgetCategory(BaseModel):
     """Allocation breakdown for a single expenditure vertical."""
 
-    name: str = Field(..., description="Category label (e.g. Catering, Venue, Decor).")
+    category_slug: str = Field(..., description="Stable machine-readable slug identifier for category.")
+    name: str = Field(..., description="Human-readable category label (e.g. Catering, Venue, Decor).")
     allocated_inr: int = Field(..., description="Calculated expenditure amount in whole INR.")
     percentage: float = Field(..., description="Share of total budget (e.g. 35.0%).")
     description: str = Field(..., description="Context on what this allocation covers.")
@@ -308,7 +309,8 @@ class ChecklistItem(BaseModel):
 class ChecklistCategory(BaseModel):
     """Checklist group by vendor domain."""
 
-    category_name: str = Field(..., description="Vendor category name matching budget category.")
+    category_slug: str = Field(..., description="Stable machine-readable slug identifier matching budget.")
+    category_name: str = Field(..., description="Human-readable category label matching budget.")
     items: List[ChecklistItem] = Field(..., description="Checklist items under this domain.")
 
 
@@ -364,9 +366,9 @@ class CreativeIdeas(BaseModel):
     activities: List[ActivityIdea] = Field(..., description="Engaging event elements.")
     decor_ideas: List[DecorIdea] = Field(..., description="Decor arrangements.")
     budget_fit_note: str = Field(..., description="Note on how these creative choices respect the budget.")
-    source: Literal["gemini", "curated_fallback"] = Field(
-        default="curated_fallback",
-        description="Origin of the creative output."
+    source: Literal["ai", "fallback"] = Field(
+        default="fallback",
+        description="Source of creative ideas: 'ai' from Gemini or 'fallback' from curated benchmarks."
     )
 
 

@@ -16,7 +16,7 @@ from app.models import (
     TimelineTask,
 )
 from app.planner.data import (
-    CRUNCH_PLAN_DAYS_THRESHOLD,
+    CRUNCH_THRESHOLD_DAYS,
     DUE_SOON_DAYS_THRESHOLD,
     TIMELINE_TASK_TEMPLATES,
 )
@@ -64,8 +64,8 @@ def build_timeline(event: EventInput, today: date) -> TimelineSchedule:
     raw_templates = TIMELINE_TASK_TEMPLATES.get(event.event_type.value, [])
     topological_ranks = compute_topological_ranks(raw_templates)
 
-    # Crunch plan activation when event is within the crunch threshold
-    is_crunch = days_remaining <= CRUNCH_PLAN_DAYS_THRESHOLD
+    # Crunch plan activation when event is within the crunch threshold (<= 7 days)
+    is_crunch = days_remaining <= CRUNCH_THRESHOLD_DAYS
     if is_crunch:
         active_templates = [t for t in raw_templates if t.get("priority") == "critical"]
         if not active_templates:
