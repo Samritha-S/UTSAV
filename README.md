@@ -101,7 +101,7 @@ Generic planning applications fail because they either force rigid generic templ
 |  [Security Middleware Pipeline]                                                   |
 |   1. SecurityHeadersMiddleware (CSP: default-src 'self', X-Frame-Options, etc.)   |
 |   2. PayloadAndContentTypeMiddleware (Strict application/json & 64KB limit)       |
-|   3. RateLimitMiddleware (Client IP token bucket: 15 req/min)                     |
+|   3. RateLimitMiddleware (Client IP sliding window: 15 AI req/min, 60 general)    |
 |   4. RequestLoggingMiddleware (Sanitized structured access audit logs)            |
 |                                                                                   |
 |  [Injectable Dependency Layer]                                                    |
@@ -432,7 +432,7 @@ Health check and readiness endpoint.
 3. **Prompt Injection & Delimiter Neutralization**:
    - User inputs (`theme_notes` and `refinement_instruction`) have angle brackets (`<`, `>`) stripped or neutralized before prompt template interpolation to prevent tag spoofing.
 4. **Rate Limiting & Payload Limits**:
-   - In-memory token bucket rate limiter strictly caps clients at 15 requests/minute per IP address (`429 Too Many Requests` with `Retry-After` header).
+   - In-memory sliding window rate limiter strictly caps clients at 15 AI requests/minute and 60 general requests/minute per IP address (`429 Too Many Requests` with `Retry-After` header).
    - Middleware enforces a 64 KB maximum request body size (`413 Content Too Large`).
    - Strict `Content-Type: application/json` verification (`415 Unsupported Media Type`).
 5. **Credential Safety**:
@@ -449,7 +449,7 @@ Health check and readiness endpoint.
 - **Color Palette Compliance**:
   - Warm Indian celebration theme: Deep marigold gold (`#b87400`), warm terracotta/coral (`#b84414`), deep forest emerald (`#175438`), and warm parchment background (`#fcfbf7`).
   - **Distinctive Color Scheme**: Authentic warm Indian celebration palette strictly adhering to marigold, terracotta, and deep forest emerald aesthetics, validated by automated colorimetry tests.
-  - All text/background combinations meet WCAG 2.1 AA contrast ratios (minimum 4.5:1).
+  - High text-to-background contrast ratios engineered to meet WCAG 2.1 AA readability standards (4.5:1+ for body text).
 
 ---
 
