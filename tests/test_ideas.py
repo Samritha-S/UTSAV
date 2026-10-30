@@ -29,14 +29,6 @@ from app.models import (
 from app.planner.budget import allocate_budget
 
 
-@pytest.fixture(autouse=True)
-def clear_cache_between_tests():
-    """Ensure in-memory cache is reset before and after every test."""
-    ideas_cache.clear()
-    yield
-    ideas_cache.clear()
-
-
 @pytest.fixture
 def sample_event() -> EventInput:
     """Standard valid wedding intake fixture."""

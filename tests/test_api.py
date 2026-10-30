@@ -13,19 +13,7 @@ from app.planner.data import CATEGORY_LABELS
 from app.security import (
     MAX_PAYLOAD_SIZE,
     SlidingWindowRateLimiter,
-    ai_rate_limiter,
-    general_rate_limiter,
 )
-
-
-@pytest.fixture(autouse=True)
-def reset_rate_limiters():
-    """Ensure in-memory rate limiters are cleared before and after each test."""
-    ai_rate_limiter.clear()
-    general_rate_limiter.clear()
-    yield
-    ai_rate_limiter.clear()
-    general_rate_limiter.clear()
 
 
 @pytest.fixture
