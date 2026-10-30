@@ -290,7 +290,7 @@ def test_sanitization_strips_html_and_markdown_links():
 
 def test_api_key_never_leaked_in_logs_or_response(sample_event, sample_budget, caplog):
     """Verify secret API key never leaks into log records or output models."""
-    secret_key = "AIzaSy_SUPER_CONFIDENTIAL_KEY_99999"
+    secret_key = "test-key-not-real-12345"
 
     with (
         patch("app.ai.ideas.get_settings") as mock_settings,

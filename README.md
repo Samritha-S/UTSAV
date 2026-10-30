@@ -53,7 +53,7 @@ Generic planning applications fail because they either force rigid generic templ
 
 - **Interactive In-Browser Refinement**:
   - Allows organizers to refine creative ideas dynamically (e.g., *"Make it eco-friendly with marigold and banana leaf decor"* or *"Focus on South Indian breakfast delicacies"*).
-  - Enforces client-side and server-side rate limits (max 5 refinements per session, 15 API requests/minute).
+  - Enforces client-side and server-side rate limits (max 5 refinements per session, 10 AI requests/minute, 60 general requests/minute).
 
 - **Offline-First Persistence**:
   - Automatically saves the complete event plan and checklist completion states to browser `localStorage`.
@@ -101,7 +101,7 @@ Generic planning applications fail because they either force rigid generic templ
 |  [Security Middleware Pipeline]                                                   |
 |   1. SecurityHeadersMiddleware (CSP: default-src 'self', X-Frame-Options, etc.)   |
 |   2. PayloadAndContentTypeMiddleware (Strict application/json & 64KB limit)       |
-|   3. RateLimitMiddleware (Client IP sliding window: 15 AI req/min, 60 general)    |
+|   3. RateLimitMiddleware (Client IP sliding window: 10 AI req/min, 60 general)    |
 |   4. RequestLoggingMiddleware (Sanitized structured access audit logs)            |
 |                                                                                   |
 |  [Injectable Dependency Layer]                                                    |
@@ -294,6 +294,8 @@ All settings are configured via environment variables or a local `.env` file:
 | `ENVIRONMENT` | Optional | `development` | Deployment environment flag (`development`, `staging`, `production`). |
 | `PORT` | Optional | `8000` | HTTP port on which Uvicorn listens. |
 | `HOST` | Optional | `127.0.0.1` | Network interface to bind. |
+| `RATE_LIMIT_AI_PER_MINUTE` | Optional | `10` | Maximum AI-backed planning requests per minute per client IP. |
+| `RATE_LIMIT_GENERAL_PER_MINUTE` | Optional | `60` | Maximum general requests per minute per client IP. |
 | `LOG_LEVEL` | Optional | `INFO` | Application logging verbosity (`DEBUG`, `INFO`, `WARNING`, `ERROR`). |
 
 ---
@@ -432,7 +434,7 @@ Health check and readiness endpoint.
 3. **Prompt Injection & Delimiter Neutralization**:
    - User inputs (`theme_notes` and `refinement_instruction`) have angle brackets (`<`, `>`) stripped or neutralized before prompt template interpolation to prevent tag spoofing.
 4. **Rate Limiting & Payload Limits**:
-   - In-memory sliding window rate limiter strictly caps clients at 15 AI requests/minute and 60 general requests/minute per IP address (`429 Too Many Requests` with `Retry-After` header).
+   - In-memory sliding window rate limiter strictly caps clients at 10 AI requests/minute and 60 general requests/minute per IP address (`429 Too Many Requests` with `Retry-After` header).
    - Middleware enforces a 64 KB maximum request body size (`413 Content Too Large`).
    - Strict `Content-Type: application/json` verification (`415 Unsupported Media Type`).
 5. **Credential Safety**:
