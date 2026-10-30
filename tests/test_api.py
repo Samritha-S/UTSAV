@@ -390,3 +390,36 @@ def test_date_dependency_override_determinism(client, mock_ideas):
             assert tasks1 == tasks2
     finally:
         app.dependency_overrides.clear()
+
+
+def test_get_today_returns_kolkata_date_and_is_overridable(client, mock_ideas):
+    """Verify get_today returns a date in Asia/Kolkata timezone and respects dependency_overrides."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    today_val = get_today()
+    assert isinstance(today_val, date)
+    expected_kolkata = datetime.now(ZoneInfo("Asia/Kolkata")).date()
+    assert today_val == expected_kolkata
+
+    # Verify override
+    overridden_date = date(2028, 5, 15)
+    app.dependency_overrides[get_today] = lambda: overridden_date
+    try:
+        with patch("app.main.generate_ideas", return_value=mock_ideas):
+            payload = {
+                "event_type": "birthday",
+                "event_date": "2028-06-15",
+                "guest_count": 30,
+                "budget_inr": 50000,
+                "city": "Pune",
+                "city_tier": "tier2",
+                "venue_setting": "indoor",
+            }
+            res = client.post("/api/plan", json=payload)
+            assert res.status_code == 200
+            data = res.json()
+            assert data["timeline"]["days_remaining"] == (date(2028, 6, 15) - overridden_date).days
+    finally:
+        app.dependency_overrides.clear()
+

@@ -4,9 +4,10 @@ Coordinates deterministic planning engines, Gemini creative generation,
 rate limiting, security middleware, and single-page application static delivery.
 """
 
-from datetime import date
+from datetime import date, datetime
 import logging
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from fastapi import Depends, FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
@@ -68,9 +69,12 @@ if STATIC_DIR.exists():
 # ---------------------------------------------------------------------
 # Injectable Date Dependency
 # ---------------------------------------------------------------------
+KOLKATA_TZ = ZoneInfo("Asia/Kolkata")
+ 
+ 
 def get_today() -> date:
-    """Return today's date, injectable for deterministic testing."""
-    return date.today()
+    """Return today's date in Asia/Kolkata time zone, injectable for deterministic testing."""
+    return datetime.now(KOLKATA_TZ).date()
 
 
 # ---------------------------------------------------------------------

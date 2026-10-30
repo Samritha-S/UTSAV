@@ -3,44 +3,225 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Utsav Planner - AI-powered event planning assistant for Indian weddings, birthdays, and community celebrations.">
   <title>Utsav Planner - Indian Event Planning Assistant</title>
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
+  <!-- Accessible Skip Link -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <!-- Application Header -->
   <header class="app-header">
     <div class="header-container">
       <div class="logo">
         <span class="logo-symbol" aria-hidden="true">&#129684;</span>
         <div class="logo-text">
           <h1>Utsav Planner</h1>
-          <p class="tagline">Indian Celebrations, Planned with Clarity & Heart</p>
+          <p class="tagline">Indian Celebrations, Planned with Clarity &amp; Heart</p>
         </div>
       </div>
       <div class="header-badge">
-        <span class="badge">Currency: INR (₹)</span>
+        <span class="badge badge-currency">Currency: INR (₹)</span>
       </div>
     </div>
   </header>
 
+  <!-- Main Content Landmark -->
   <main id="main-content" class="main-container">
+    <!-- Hero / Intro Section -->
     <section class="hero-section" aria-labelledby="welcome-heading">
-      <h2 id="welcome-heading">Plan Weddings, Birthdays & Community Festivals</h2>
-      <p>
+      <h2 id="welcome-heading">Plan Weddings, Birthdays &amp; Community Festivals</h2>
+      <p class="hero-subtext">
         A first-time organizer's trusted assistant for realistic budgets,
-        milestone timelines, vendor vetting, and personalized cultural ideas.
+        milestone timelines, vendor vetting, and culturally tailored creative ideas.
       </p>
     </section>
 
-    <!-- Intake Form & Results Dashboard will be integrated in Step 6 -->
-    <div id="app-root" class="app-card">
-      <p>Utsav Planner engine initialized. Ready for planning intake.</p>
-    </div>
+    <!-- Global Error Banner -->
+    <div id="global-error" class="error-banner is-hidden" role="alert" aria-live="assertive"></div>
+
+    <!-- Intake Form Section -->
+    <section class="form-card" aria-labelledby="form-heading">
+      <div class="form-card-header">
+        <h2 id="form-heading" class="form-title">Event Intake &amp; Requirements</h2>
+        <button type="button" id="sample-plan-btn" class="btn btn-secondary btn-sm" aria-label="Populate form with realistic demo values">
+          ⚡ Try a sample plan
+        </button>
+      </div>
+
+      <form id="intake-form" novalidate>
+        <!-- 1. Event Type Selection -->
+        <fieldset class="form-fieldset">
+          <legend class="fieldset-legend">Event Type <span class="required" aria-hidden="true">*</span></legend>
+          <div class="radio-cards-grid">
+            <div class="radio-card">
+              <input type="radio" id="type-wedding" name="event_type" value="wedding" checked>
+              <label for="type-wedding" class="radio-card-label">
+                <span class="radio-icon" aria-hidden="true">💍</span>
+                <span class="radio-title">Wedding</span>
+                <span class="radio-desc">Multi-day traditional celebration</span>
+              </label>
+            </div>
+            <div class="radio-card">
+              <input type="radio" id="type-birthday" name="event_type" value="birthday">
+              <label for="type-birthday" class="radio-card-label">
+                <span class="radio-icon" aria-hidden="true">🎂</span>
+                <span class="radio-title">Birthday</span>
+                <span class="radio-desc">Milestone family party</span>
+              </label>
+            </div>
+            <div class="radio-card">
+              <input type="radio" id="type-community" name="event_type" value="community">
+              <label for="type-community" class="radio-card-label">
+                <span class="radio-icon" aria-hidden="true">🪔</span>
+                <span class="radio-title">Community</span>
+                <span class="radio-desc">Festival, Utsav or society mela</span>
+              </label>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- 2. Date, Guests, Budget Grid -->
+        <div class="form-row form-row-3">
+          <!-- Event Date -->
+          <div class="form-group">
+            <label for="event-date" class="form-label">Event Date <span class="required" aria-hidden="true">*</span></label>
+            <input type="date" id="event-date" name="event_date" required aria-describedby="date-help date-error" class="form-input">
+            <span id="date-help" class="field-hint">Must be today or future</span>
+            <span id="date-error" class="field-error is-hidden" role="alert" aria-live="polite"></span>
+          </div>
+
+          <!-- Guest Count -->
+          <div class="form-group">
+            <label for="guest-count" class="form-label">Guest Count <span class="required" aria-hidden="true">*</span></label>
+            <input type="number" id="guest-count" name="guest_count" min="10" max="5000" step="1" value="200" required aria-describedby="guest-help guest-error" class="form-input">
+            <span id="guest-help" class="field-hint">10 to 5,000 attendees</span>
+            <span id="guest-error" class="field-error is-hidden" role="alert" aria-live="polite"></span>
+          </div>
+
+          <!-- Budget INR -->
+          <div class="form-group">
+            <label for="budget-inr" class="form-label">Total Budget (INR) <span class="required" aria-hidden="true">*</span></label>
+            <input type="number" id="budget-inr" name="budget_inr" min="10000" max="100000000" step="1000" value="1500000" required aria-describedby="budget-preview budget-help budget-error" class="form-input">
+            <div id="budget-preview" class="budget-preview-box" aria-live="polite">₹15,00,000 (15 Lakh)</div>
+            <span id="budget-help" class="field-hint">₹10,000 to ₹10,00,00,000</span>
+            <span id="budget-error" class="field-error is-hidden" role="alert" aria-live="polite"></span>
+          </div>
+        </div>
+
+        <!-- 3. City, Tier, Venue Grid -->
+        <div class="form-row form-row-3">
+          <!-- City -->
+          <div class="form-group">
+            <label for="city" class="form-label">City / Region <span class="required" aria-hidden="true">*</span></label>
+            <input type="text" id="city" name="city" value="Jaipur" maxlength="50" required placeholder="e.g. Jaipur, Pune, Bengaluru" aria-describedby="city-help city-error" class="form-input">
+            <span id="city-help" class="field-hint">2 to 50 characters</span>
+            <span id="city-error" class="field-error is-hidden" role="alert" aria-live="polite"></span>
+          </div>
+
+          <!-- City Tier -->
+          <div class="form-group">
+            <label for="city-tier" class="form-label">City Tier <span class="required" aria-hidden="true">*</span></label>
+            <select id="city-tier" name="city_tier" aria-describedby="tier-help tier-error" class="form-select">
+              <option value="metro">Metro (Delhi NCR, Mumbai, Bengaluru, etc.)</option>
+              <option value="tier2" selected>Tier 2 (Jaipur, Pune, Lucknow, Chandigarh, etc.)</option>
+              <option value="tier3">Tier 3 (Smaller cities, towns &amp; districts)</option>
+            </select>
+            <span id="tier-help" class="field-hint">Indices market vendor benchmarks</span>
+            <span id="tier-error" class="field-error is-hidden" role="alert" aria-live="polite"></span>
+          </div>
+
+          <!-- Venue Setting -->
+          <div class="form-group">
+            <label for="venue-setting" class="form-label">Venue Setting <span class="required" aria-hidden="true">*</span></label>
+            <select id="venue-setting" name="venue_setting" aria-describedby="venue-help venue-error" class="form-select">
+              <option value="indoor" selected>Indoor (Banquet, hall, hotel)</option>
+              <option value="outdoor">Outdoor (Lawn, open ground, courtyard)</option>
+              <option value="both">Both (Indoor banquet + outdoor lawn)</option>
+            </select>
+            <span id="venue-help" class="field-hint">Adapts weather &amp; power generator checks</span>
+            <span id="venue-error" class="field-error is-hidden" role="alert" aria-live="polite"></span>
+          </div>
+        </div>
+
+        <!-- 4. Dietary Preferences Fieldset -->
+        <fieldset class="form-fieldset">
+          <legend class="fieldset-legend">Dietary Preferences</legend>
+          <div class="checkboxes-grid">
+            <div class="checkbox-item">
+              <input type="checkbox" id="diet-veg" name="dietary" value="vegetarian" checked>
+              <label for="diet-veg" class="checkbox-box-label">🥗 Vegetarian</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="diet-jain" name="dietary" value="jain">
+              <label for="diet-jain" class="checkbox-box-label">🌱 Jain (No Root Veg)</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="diet-vegan" name="dietary" value="vegan">
+              <label for="diet-vegan" class="checkbox-box-label">🥑 Vegan (No Dairy)</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="diet-halal" name="dietary" value="halal">
+              <label for="diet-halal" class="checkbox-box-label">🥩 Halal</label>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- 5. Birthday Age Group (Shown only for birthdays) -->
+        <div id="age-group-container" class="form-group is-hidden">
+          <label for="age-group" class="form-label">Target Age Demographic (Birthday)</label>
+          <select id="age-group" name="age_group" aria-describedby="age-help age-error" class="form-select">
+            <option value="">Select age group (optional)</option>
+            <option value="kids">Kids (0-12 yrs)</option>
+            <option value="teens">Teens (13-19 yrs)</option>
+            <option value="adults">Adults (20-59 yrs)</option>
+            <option value="seniors">Seniors (60+ yrs)</option>
+          </select>
+          <span id="age-help" class="field-hint">Tailors entertainment and themes</span>
+          <span id="age-error" class="field-error is-hidden" role="alert" aria-live="polite"></span>
+        </div>
+
+        <!-- 6. Theme Notes -->
+        <div class="form-group">
+          <label for="theme-notes" class="form-label">Theme Concept &amp; Special Notes (Optional)</label>
+          <textarea id="theme-notes" name="theme_notes" maxlength="400" rows="3" placeholder="e.g. Royal Marwar aesthetic with marigold flowers, sunset pheras, live classical sitar recital..." aria-describedby="notes-counter notes-error" class="form-textarea"></textarea>
+          <div class="field-footer">
+            <span id="notes-counter" class="char-counter">0 / 400</span>
+            <span id="notes-error" class="field-error is-hidden" role="alert" aria-live="polite"></span>
+          </div>
+        </div>
+
+        <!-- Submit Button & Loading State -->
+        <div class="form-actions">
+          <button type="submit" id="submit-plan-btn" class="btn btn-primary btn-lg">
+            Generate Event Plan
+          </button>
+        </div>
+
+        <!-- Loading indicator -->
+        <div id="loading-indicator" class="loading-state is-hidden" aria-live="polite" aria-atomic="true">
+          <div class="spinner" aria-hidden="true"></div>
+          <p class="loading-text">
+            Synthesizing your event plan... (allocating deterministic budget, backwards scheduling milestones, and formulating cultural ideas)
+          </p>
+        </div>
+      </form>
+    </section>
+
+    <!-- Results Dashboard Section -->
+    <div id="results-container" class="results-container is-hidden"></div>
   </main>
 
+  <!-- Application Footer -->
   <footer class="app-footer">
-    <p>&copy; 2026 Utsav Planner &bull; Hack2skill PromptWars Submission &bull; Estimates are illustrative planning benchmarks.</p>
+    <div class="footer-container">
+      <p>&copy; 2026 Utsav Planner &bull; Hack2skill PromptWars Submission</p>
+      <p class="footer-disclaimer">Figures provided are illustrative planning estimates derived from regional market benchmarks, not commercial vendor quotes.</p>
+    </div>
   </footer>
 
-  <script src="/static/app.js"></script>
+  <!-- Application Script (ES Module) -->
+  <script type="module" src="/static/app.js"></script>
 </body>
 </html>

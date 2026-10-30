@@ -200,3 +200,25 @@ def test_timeline_determinism(fixed_today: date):
     run_2 = build_timeline(event, today=fixed_today)
 
     assert run_1.model_dump() == run_2.model_dump()
+
+
+def test_two_weeks_away_scenario(fixed_today: date):
+    """Verify 2-weeks-away (14 days) planning window: above crunch threshold, correctly computes urgency."""
+    event_date = fixed_today + timedelta(days=14)
+    event = EventInput(
+        event_type=EventType.WEDDING,
+        event_date=event_date,
+        guest_count=120,
+        budget_inr=900000,
+        city="Nagpur",
+    )
+
+    schedule = build_timeline(event, today=fixed_today)
+
+    assert schedule.days_remaining == 14
+    assert schedule.weeks_remaining == 2.0
+    assert schedule.is_crunch_plan is False  # 14 days > 7 day crunch threshold
+    assert schedule.most_urgent_action is not None
+    # Many high-lead tasks should be marked overdue with concrete alternative advice
+    assert schedule.status_counts[TaskStatus.OVERDUE_COMPRESSED.value] > 0
+
