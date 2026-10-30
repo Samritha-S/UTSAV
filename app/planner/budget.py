@@ -167,10 +167,15 @@ def get_budget_floor(event_type: EventType, city_tier: CityTier) -> float:
 
 def evaluate_feasibility(
     event: EventInput,
-    total_budget_inr: float,
+    total_budget_inr: int,
     actual_per_guest_inr: float,
 ) -> BudgetFeasibility:
     """Evaluate budget feasibility against realistic per-guest cost benchmarks.
+
+    Note on computation: Per-guest spend (actual_per_guest_inr) is computed on
+    the FULL planned budget (total_budget_inr / guest_count) to reflect the
+    organizer's total financial commitment per attendee, while category
+    allocations and contingency are partitioned beneath this total.
 
     Returns a verdict ('comfortable', 'tight', or 'unrealistic') and computes
     2-4 concrete, quantified recommendations when the budget is constrained.
@@ -240,7 +245,7 @@ def allocate_budget(event: EventInput) -> BudgetBreakdown:
 
     Ensures that sum(category.allocated_inr) + contingency_inr == event.budget_inr exactly.
     """
-    total_budget_inr = round(event.budget_inr)
+    total_budget_inr = int(event.budget_inr)
     contingency_pct = calculate_contingency_percentage(event)
 
     # Calculate integer contingency in INR
@@ -263,20 +268,20 @@ def allocate_budget(event: EventInput) -> BudgetBreakdown:
         categories.append(
             BudgetCategory(
                 name=category_name,
-                allocated_inr=float(allocated_amount),
+                allocated_inr=allocated_amount,
                 percentage=percentage,
                 description=base_descriptions.get(category_name, ""),
             )
         )
 
     actual_cpg = round(total_budget_inr / event.guest_count, 2)
-    feasibility = evaluate_feasibility(event, float(total_budget_inr), actual_cpg)
+    feasibility = evaluate_feasibility(event, total_budget_inr, actual_cpg)
 
     return BudgetBreakdown(
-        total_budget_inr=float(total_budget_inr),
+        total_budget_inr=total_budget_inr,
         currency="INR",
         cost_per_guest_inr=actual_cpg,
-        contingency_inr=float(contingency_inr),
+        contingency_inr=contingency_inr,
         contingency_percentage=contingency_pct,
         categories=categories,
         feasibility=feasibility,
