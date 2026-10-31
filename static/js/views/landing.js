@@ -143,7 +143,7 @@ export const landingView = {
               if (el) el.scrollIntoView({ behavior: "smooth" });
             },
           },
-          "Explore Live Demo &darr;"
+          "Explore Live Demo ↓"
         )
       )
     );
@@ -162,7 +162,7 @@ export const landingView = {
         ...[
           { type: "wedding", title: "Wedding Celebration", ...DEMO_PRESETS.wedding },
           { type: "birthday", title: "Milestone Birthday", ...DEMO_PRESETS.birthday },
-          { type: "community", title: "Community Festival &amp; Mela", ...DEMO_PRESETS.community },
+          { type: "community", title: "Community Festival & Mela", ...DEMO_PRESETS.community },
         ].map((item) => {
           return h(
             "article",
@@ -185,14 +185,14 @@ export const landingView = {
             h(
               "div",
               { class: "door-content" },
-              h("h3", { class: "door-title" }, item.title.replace("&amp;", "&")),
+              h("h3", { class: "door-title" }, item.title),
               h("p", { class: "door-desc" }, item.doorDesc),
               h("span", { class: "door-lead-time" }, item.leadTime)
             ),
             h(
               "div",
               { class: "door-action" },
-              h("span", { class: "door-arrow", "aria-hidden": "true" }, "Start Plan &rarr;")
+              h("span", { class: "door-arrow", "aria-hidden": "true" }, "Start Plan →")
             )
           );
         })

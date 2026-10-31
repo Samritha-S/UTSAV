@@ -5,13 +5,13 @@ feasibility decisions remain strictly owned by the deterministic Python engine.
 """
 
 import logging
-import re
 
 from google import genai
 from google.genai import types
 
 from app.ai.cache import compute_cache_key, ideas_cache
 from app.ai.fallback_data import filter_menu_by_diet, get_fallback_ideas
+from app.ai.text_cleaner import clean_model_text, split_and_clean_dishes
 from app.config import get_settings
 from app.models import (
     ActivityIdea,
@@ -50,16 +50,8 @@ SYSTEM_INSTRUCTION = (
 
 
 def _strip_html_and_markdown(text: str) -> str:
-    """Remove HTML tags and markdown link syntax from text."""
-    if not text:
-        return ""
-    # Strip HTML tags
-    no_html = re.sub(r"<[^>]+>", "", text)
-    # Convert [label](url) to label
-    no_links = re.sub(r"\[([^\]]+)\]\([^\)]+\)", r"\1", no_html)
-    # Remove control characters
-    cleaned = re.sub(r"[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]", "", no_links)
-    return cleaned.strip()
+    """Normalize model-written text by stripping markdown artifacts, HTML, and extra whitespace."""
+    return clean_model_text(text)
 
 
 def _sanitize_creative_ideas(
@@ -72,21 +64,25 @@ def _sanitize_creative_ideas(
     for t in payload.themes[:4]:
         sanitized_themes.append(
             ThemeIdea(
-                name=_strip_html_and_markdown(t.name)[:80],
-                description=_strip_html_and_markdown(t.description)[:250],
-                decor_elements=[_strip_html_and_markdown(el)[:100] for el in t.decor_elements[:4]],
-                dress_code=_strip_html_and_markdown(t.dress_code)[:120],
+                name=clean_model_text(t.name, is_title_or_item=True)[:80],
+                description=clean_model_text(t.description)[:250],
+                decor_elements=[
+                    clean_model_text(el, is_title_or_item=True)[:100] for el in t.decor_elements[:4]
+                ],
+                dress_code=clean_model_text(t.dress_code)[:120],
             )
         )
 
     # 2. Menu suggestions (max 5 sections, max 6 dishes each, filtered by diet)
     sanitized_menus: list[MenuSection] = []
     for m in payload.menu_suggestions[:5]:
-        clean_dishes = [_strip_html_and_markdown(d)[:100] for d in m.dishes[:6]]
-        clean_tags = [_strip_html_and_markdown(tag)[:50] for tag in m.dietary_tags[:3]]
+        clean_dishes = split_and_clean_dishes(m.dishes)[:6]
+        clean_tags = [
+            clean_model_text(tag, is_title_or_item=True)[:50] for tag in m.dietary_tags[:3]
+        ]
         sanitized_menus.append(
             MenuSection(
-                meal_type=_strip_html_and_markdown(m.meal_type)[:80],
+                meal_type=clean_model_text(m.meal_type, is_title_or_item=True)[:80],
                 dishes=clean_dishes,
                 dietary_tags=clean_tags,
             )
@@ -102,9 +98,9 @@ def _sanitize_creative_ideas(
     for a in payload.activities[:5]:
         sanitized_activities.append(
             ActivityIdea(
-                title=_strip_html_and_markdown(a.title)[:80],
-                description=_strip_html_and_markdown(a.description)[:250],
-                suitable_for=_strip_html_and_markdown(a.suitable_for)[:80],
+                title=clean_model_text(a.title, is_title_or_item=True)[:80],
+                description=clean_model_text(a.description)[:250],
+                suitable_for=clean_model_text(a.suitable_for, is_title_or_item=True)[:80],
             )
         )
 
@@ -113,16 +109,17 @@ def _sanitize_creative_ideas(
     for d in payload.decor_ideas[:5]:
         sanitized_decor.append(
             DecorIdea(
-                area=_strip_html_and_markdown(d.area)[:80],
-                concept=_strip_html_and_markdown(d.concept)[:250],
+                area=clean_model_text(d.area, is_title_or_item=True)[:80],
+                concept=clean_model_text(d.concept)[:250],
                 suggested_materials=[
-                    _strip_html_and_markdown(mat)[:80] for mat in d.suggested_materials[:4]
+                    clean_model_text(mat, is_title_or_item=True)[:80]
+                    for mat in d.suggested_materials[:4]
                 ],
             )
         )
 
     # 5. Budget fit note (max 400 chars)
-    clean_note = _strip_html_and_markdown(payload.budget_fit_note)[:400]
+    clean_note = clean_model_text(payload.budget_fit_note)[:400]
 
     return CreativeIdeas(
         themes=sanitized_themes,

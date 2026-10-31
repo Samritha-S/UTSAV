@@ -20,7 +20,7 @@ import {
   MAX_SAVED_EVENTS,
   renameEvent,
 } from "../storage.js";
-import { formatDate, h, createKolamMotif } from "../utils.js";
+import { formatDate, h, createKolamMotif, humanLabel } from "../utils.js";
 
 /**
  * Calculate human-readable countdown in Asia/Kolkata context.
@@ -117,7 +117,7 @@ export const eventsView = {
               ctx.navigate("#/plan");
             },
           },
-          "Plan Your First Event &rarr;"
+          "Plan Your First Event →"
         )
       );
       view.appendChild(emptyState);
@@ -144,11 +144,14 @@ export const eventsView = {
     const rowsContainer = h("div", { class: "events-index-rows", role: "list" });
 
     events.forEach((evt) => {
-      const totalTasks = evt.plan?.checklist?.total_items || 0;
+      const totalTasks =
+        evt.plan?.checklist?.total_items ||
+        evt.plan?.checklist?.categories?.flatMap((c) => c.items || []).length ||
+        0;
       const doneTasks = Array.isArray(evt.checkedItems) ? evt.checkedItems.length : 0;
       const progressText = totalTasks > 0 ? `${doneTasks} of ${totalTasks} completed` : "—";
       const countdown = getCountdownText(evt.formInputs?.event_date);
-      const eventType = (evt.formInputs?.event_type || "").toUpperCase();
+      const eventType = humanLabel(evt.formInputs?.event_type || "");
 
       const row = h(
         "article",

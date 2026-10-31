@@ -10,15 +10,39 @@
  * STRICT SECURITY: Zero innerHTML/outerHTML/eval. Uses safe h().
  */
 
-import { formatDate, h, createKolamMotif } from "./utils.js";
+import { formatDate, h, createKolamMotif, humanLabel } from "./utils.js";
+
+/**
+ * Safely parse date and compute days until target.
+ * @param {string} dateStr
+ * @returns {number|null}
+ */
+function getDaysUntilTarget(dateStr) {
+  if (!dateStr) return null;
+  try {
+    const parts = dateStr.split("-");
+    const target = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Render the Timeline Panel as a vertical run-of-show.
- * @param {Object} timeline - TimelinePlan
+ * @param {Object} timeline - TimelineSchedule / TimelinePlan
  * @param {boolean} isActive
  * @returns {HTMLElement}
  */
 export function renderTimelinePanel(timeline, isActive) {
+  const isCrunch = Boolean(timeline.crunch_mode_active || timeline.is_crunch_plan);
+  const totalTasks = timeline.total_tasks || (timeline.tasks || []).length;
+  const crunchAdvice =
+    timeline.crunch_summary ||
+    "Your celebration date is imminent. Non-essential decorative and optional milestones have been deprioritized to preserve focus on core statutory permits, caterer lock-in, and venue access.";
+
   const panel = h(
     "section",
     {
@@ -34,21 +58,21 @@ export function renderTimelinePanel(timeline, isActive) {
       "div",
       { class: "panel-masthead" },
       h("h3", { class: "panel-headline" }, "Milestone Run-of-Show & Backward Schedule"),
-      h("p", { class: "panel-deck" },
-        `Calculated backwards from ${formatDate(timeline.event_date)}. Total of ${timeline.total_tasks} sequenced planning milestones.`
+      h(
+        "p",
+        { class: "panel-deck" },
+        `Calculated backwards from ${formatDate(timeline.event_date)}. Total of ${totalTasks} sequenced planning milestones.`
       ),
       createKolamMotif("divider", 64, 16)
     ),
 
     // Crunch Mode Advisory Banner if active
-    timeline.crunch_mode_active
+    isCrunch
       ? h(
           "div",
           { class: "crunch-advisory-box" },
           h("p", { class: "crunch-lead" }, "■ 7-DAY CRUNCH MODE ACTIVE"),
-          h("p", { class: "crunch-text" },
-            "Your celebration date is imminent. Non-essential decorative and optional milestones have been deprioritized to preserve focus on core statutory permits, caterer lock-in, and venue access."
-          )
+          h("p", { class: "crunch-text" }, crunchAdvice)
         )
       : null,
 
@@ -56,7 +80,7 @@ export function renderTimelinePanel(timeline, isActive) {
     h(
       "div",
       { class: "run-of-show" },
-      ...renderGroupedTasks(timeline.tasks)
+      ...renderGroupedTasks(timeline.tasks || [])
     )
   );
 
@@ -68,7 +92,7 @@ export function renderTimelinePanel(timeline, isActive) {
  * - "Immediate Actions & Overdue" (overdue or <= 7 days)
  * - "Upcoming Fortnight" (8 - 21 days)
  * - "Intermediate Milestones" (22 - 60 days)
- * - "Early Foundation & Lock-in" (> 60 days)
+ * - "Long-Range Foundation Milestones" (> 60 days)
  *
  * @param {Array<Object>} tasks
  * @returns {Array<HTMLElement>}
@@ -78,17 +102,51 @@ function renderGroupedTasks(tasks) {
     return [h("p", { class: "empty-state" }, "No timeline tasks generated.")];
   }
 
+  // Pre-calculate days until deadline for reliable grouping
+  const enriched = tasks.map((t) => {
+    const dateStr = t.target_date || t.deadline_date;
+    const days =
+      typeof t.days_until_deadline === "number"
+        ? t.days_until_deadline
+        : getDaysUntilTarget(dateStr);
+    return { ...t, _dateStr: dateStr, _daysUntil: days };
+  });
+
   const groups = [
-    { title: "Immediate Priority & Overdue Milestones", predicate: (t) => t.days_until_deadline <= 7 || t.status === "overdue_compressed" },
-    { title: "Upcoming Fortnight (8 to 21 Days)", predicate: (t) => t.days_until_deadline > 7 && t.days_until_deadline <= 21 && t.status !== "overdue_compressed" },
-    { title: "Intermediate Milestones (22 to 60 Days)", predicate: (t) => t.days_until_deadline > 21 && t.days_until_deadline <= 60 && t.status !== "overdue_compressed" },
-    { title: "Long-Range Foundation Milestones (>60 Days)", predicate: (t) => t.days_until_deadline > 60 && t.status !== "overdue_compressed" },
+    {
+      title: "Immediate Priority & Overdue Milestones",
+      predicate: (t) =>
+        t.status === "overdue_compressed" ||
+        (t._daysUntil !== null && t._daysUntil <= 7),
+    },
+    {
+      title: "Upcoming Fortnight (8 to 21 Days)",
+      predicate: (t) =>
+        t.status !== "overdue_compressed" &&
+        t._daysUntil !== null &&
+        t._daysUntil > 7 &&
+        t._daysUntil <= 21,
+    },
+    {
+      title: "Intermediate Milestones (22 to 60 Days)",
+      predicate: (t) =>
+        t.status !== "overdue_compressed" &&
+        t._daysUntil !== null &&
+        t._daysUntil > 21 &&
+        t._daysUntil <= 60,
+    },
+    {
+      title: "Long-Range Foundation Milestones (>60 Days)",
+      predicate: (t) =>
+        t.status !== "overdue_compressed" &&
+        (t._daysUntil === null || t._daysUntil > 60),
+    },
   ];
 
   const elements = [];
 
   for (const group of groups) {
-    const matchedTasks = tasks.filter(group.predicate);
+    const matchedTasks = enriched.filter(group.predicate);
     if (matchedTasks.length === 0) continue;
 
     elements.push(
@@ -117,19 +175,35 @@ function renderTaskRow(task) {
   const isOverdue = task.status === "overdue_compressed";
   const isDueSoon = task.status === "due_soon";
   const isCritical = task.priority === "critical";
+  const dateStr = task._dateStr || task.target_date || task.deadline_date;
+  const days =
+    typeof task._daysUntil === "number"
+      ? task._daysUntil
+      : getDaysUntilTarget(dateStr);
 
   let statusLabel = "On track";
   if (isOverdue) {
     statusLabel = "Overdue / Compressed";
+  } else if (typeof days === "number" && !isNaN(days)) {
+    if (days === 0) {
+      statusLabel = "Due today";
+    } else if (days === 1) {
+      statusLabel = "Due tomorrow";
+    } else if (days > 1 && days <= 7) {
+      statusLabel = `Due in ${days} days`;
+    } else if (days < 0) {
+      const past = Math.abs(days);
+      statusLabel = `${past} ${past === 1 ? "day" : "days"} past target`;
+    } else {
+      statusLabel = `${days} days remaining`;
+    }
   } else if (isDueSoon) {
-    statusLabel = `Due in ${task.days_until_deadline} day${task.days_until_deadline === 1 ? "" : "s"}`;
-  } else if (task.days_until_deadline < 0) {
-    statusLabel = `${Math.abs(task.days_until_deadline)} days past target`;
-  } else {
-    statusLabel = `${task.days_until_deadline} days remaining`;
+    statusLabel = "Due soon";
   }
 
   const priorityGlyph = isCritical ? "■" : "□";
+  const advice = task.advice || task.alternative_advice;
+  const categoryLabel = humanLabel(task.category || "");
 
   const rowClasses = [
     "run-of-show-item",
@@ -149,7 +223,9 @@ function renderTaskRow(task) {
     h(
       "div",
       { class: "ros-date-col" },
-      h("time", { class: "ros-date", datetime: task.deadline_date }, formatDate(task.deadline_date)),
+      dateStr
+        ? h("time", { class: "ros-date", datetime: dateStr }, formatDate(dateStr))
+        : h("span", { class: "ros-date" }, "Schedule pending"),
       h("span", { class: `ros-countdown ${isOverdue ? "text-vermilion" : ""}` }, statusLabel)
     ),
 
@@ -162,7 +238,7 @@ function renderTaskRow(task) {
         { class: "ros-heading-line" },
         h("span", { class: `ros-glyph ${isCritical ? "text-vermilion" : ""}`, "aria-hidden": "true" }, priorityGlyph),
         h("h5", { class: "ros-title" }, task.title),
-        h("span", { class: "ros-category" }, `[${task.category}]`)
+        categoryLabel ? h("span", { class: "ros-category" }, `[${categoryLabel}]`) : null
       ),
 
       // Dependencies
@@ -176,12 +252,12 @@ function renderTaskRow(task) {
         : null,
 
       // Alternative Advice (Crunch / Overdue)
-      task.alternative_advice
+      advice
         ? h(
             "div",
             { class: "ros-alternative-advice" },
-            h("strong", { class: "advice-lead" }, "Do this instead: "),
-            h("span", { class: "advice-body" }, task.alternative_advice)
+            h("strong", { class: "advice-lead" }, "Practical guidance: "),
+            h("span", { class: "advice-body" }, advice)
           )
         : null
     )

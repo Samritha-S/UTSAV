@@ -199,7 +199,7 @@ export const planView = {
             class: "btn btn-primary",
             onclick: () => this.goToStep(2),
           },
-          "Next: Guests & Budget &rarr;"
+          "Next: Guests & Budget →"
         )
       )
     );
@@ -314,7 +314,7 @@ export const planView = {
             class: "btn btn-outline",
             onclick: () => this.goToStep(1),
           },
-          "&larr; Back"
+          "← Back"
         ),
         h(
           "button",
@@ -323,7 +323,7 @@ export const planView = {
             class: "btn btn-primary",
             onclick: () => this.goToStep(3),
           },
-          "Next: Preferences &rarr;"
+          "Next: Preferences →"
         )
       )
     );
@@ -466,7 +466,7 @@ export const planView = {
             class: "btn btn-outline",
             onclick: () => this.goToStep(2),
           },
-          "&larr; Back"
+          "← Back"
         ),
         h(
           "button",

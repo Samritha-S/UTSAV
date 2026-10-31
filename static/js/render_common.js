@@ -8,7 +8,7 @@
  * NO pills or badges anywhere.
  */
 
-import { formatINR, formatINRWords, formatDate, h, createKolamMotif } from "./utils.js";
+import { formatINR, formatINRWords, formatDate, h, createKolamMotif, humanLabel } from "./utils.js";
 import { store } from "./state.js";
 
 /**
@@ -37,9 +37,16 @@ export function createPlanSummary(plan) {
   // Find the single most urgent task
   let mostUrgentTask = null;
   if (t.tasks && t.tasks.length > 0) {
-    // Sort tasks by days_until_deadline ascending
-    const sorted = [...t.tasks].sort((a, b) => a.days_until_deadline - b.days_until_deadline);
-    // Find first overdue or critical or due soon
+    const parseDateMs = (d) => {
+      if (!d) return 9999999999999;
+      const parts = d.split("-");
+      return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10)).getTime();
+    };
+    const sorted = [...t.tasks].sort((a, b) => {
+      const da = a.days_until_deadline !== undefined ? a.days_until_deadline : parseDateMs(a.target_date || a.deadline_date);
+      const db = b.days_until_deadline !== undefined ? b.days_until_deadline : parseDateMs(b.target_date || b.deadline_date);
+      return da - db;
+    });
     mostUrgentTask = sorted.find((task) => task.status === "overdue_compressed") ||
       sorted.find((task) => task.priority === "critical") ||
       sorted[0];
@@ -67,7 +74,7 @@ export function createPlanSummary(plan) {
         h("p", { class: "masthead-kicker" }, "The Event Programme"),
         h("h2", { id: "plan-summary-heading", class: "summary-headline" }, titleText),
         h("p", { class: "masthead-meta" },
-          `${formatDate(ev.event_date)} · ${daysText} · ${ev.city_tier.toUpperCase()} Tier · ${ev.venue_setting} setting`
+          `${formatDate(ev.event_date)} · ${daysText} · ${humanLabel(ev.city_tier)} · ${humanLabel(ev.venue_setting)}`
         )
       )
     ),
@@ -121,7 +128,7 @@ export function createPlanSummary(plan) {
           { class: "urgent-action-strip" },
           h("div", { class: "urgent-action-text" },
             h("span", { class: "urgent-label" }, mostUrgentTask.status === "overdue_compressed" ? "■ IMMEDIATE ACTION REQUIRED" : "■ PRIORITY NEXT STEP"),
-            h("p", { class: "urgent-task-title" }, `${mostUrgentTask.title} — ${mostUrgentTask.deadline_date ? `Target: ${formatDate(mostUrgentTask.deadline_date)}` : ""}`)
+            h("p", { class: "urgent-task-title" }, `${mostUrgentTask.title} — ${mostUrgentTask.target_date || mostUrgentTask.deadline_date ? `Target: ${formatDate(mostUrgentTask.target_date || mostUrgentTask.deadline_date)}` : ""}`)
           ),
           h(
             "button",

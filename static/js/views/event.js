@@ -20,8 +20,13 @@ import { getEventById, updateEvent } from "../storage.js";
 import { generateICS, downloadICS } from "../lib/ics.js";
 import {
   formatINR,
+  formatCompactINR,
   formatINRWords,
+  formatDiffINR,
   formatDate,
+  getCountdownInfo,
+  humanLabel,
+  pluralize,
   h,
   createKolamMotif,
 } from "../utils.js";
@@ -113,25 +118,25 @@ export const eventView = {
             "div",
             { class: "figure-entry" },
             h("span", { class: "fig-label" }, "Total Budget"),
-            h("span", { class: "fig-val" }, `${formatINR(budget.total_budget_inr)} ${formatINRWords(budget.total_budget_inr)}`)
+            h("span", { class: "fig-val table-amount" }, `${formatINR(budget.total_budget_inr)} ${formatINRWords(budget.total_budget_inr)}`)
           ),
           h(
             "div",
             { class: "figure-entry" },
             h("span", { class: "fig-label" }, "Expected Guests"),
-            h("span", { class: "fig-val" }, `${ev.guest_count} attendees`)
+            h("span", { class: "fig-val" }, pluralize(ev.guest_count, "guest"))
           ),
           h(
             "div",
             { class: "figure-entry" },
             h("span", { class: "fig-label" }, "City / Tier"),
-            h("span", { class: "fig-val" }, `${ev.city} (${(ev.city_tier || "tier2").toUpperCase()})`)
+            h("span", { class: "fig-val" }, `${ev.city} · ${humanLabel(ev.city_tier)}`)
           ),
           h(
             "div",
             { class: "figure-entry" },
             h("span", { class: "fig-label" }, "Venue Setting"),
-            h("span", { class: "fig-val" }, ev.indoor_outdoor || ev.venue_setting || "indoor")
+            h("span", { class: "fig-val" }, humanLabel(ev.indoor_outdoor || ev.venue_setting || "indoor"))
           )
         ),
 
@@ -143,13 +148,13 @@ export const eventView = {
             "div",
             { class: "figure-entry" },
             h("span", { class: "fig-label" }, "Planned Per Guest"),
-            h("span", { class: "fig-val" }, `${formatINR(budget.cost_per_guest_inr)} (Floor: ${formatINR(budget.feasibility.floor_per_guest_inr)})`)
+            h("span", { class: "fig-val table-amount" }, `${formatINR(budget.cost_per_guest_inr)} (Floor: ${formatINR(budget.feasibility.floor_per_guest_inr)})`)
           ),
           h(
             "div",
             { class: "figure-entry" },
             h("span", { class: "fig-label" }, "Contingency Cushion"),
-            h("span", { class: "fig-val" }, `${formatINR(budget.contingency_inr)} (${budget.contingency_percentage}%)`)
+            h("span", { class: "fig-val table-amount" }, `${formatINR(budget.contingency_inr)} (${budget.contingency_percentage}%)`)
           ),
           h(
             "div",
@@ -161,7 +166,7 @@ export const eventView = {
             "div",
             { class: "figure-entry" },
             h("span", { class: "fig-label" }, "Dietary Focus"),
-            h("span", { class: "fig-val" }, (ev.dietary_preferences || ["vegetarian"]).join(", "))
+            h("span", { class: "fig-val" }, (ev.dietary_preferences || ["vegetarian"]).map(humanLabel).join(", "))
           )
         )
       ),
@@ -214,7 +219,7 @@ export const eventView = {
             ctx.navigate("#/events");
           },
         },
-        "&larr; My saved events"
+        "← My saved events"
       )
     );
     view.appendChild(toolbar);
@@ -662,6 +667,7 @@ export const eventView = {
         { class: "timeline-schedule" },
         ...timeline.tasks.map((task) => {
           const isOverdue = task.status === "overdue_compressed";
+          const deadline = task.target_date || task.deadline_date;
           return h(
             "article",
             { id: `task-${task.task_id}`, class: `timeline-card ${isOverdue ? "is-overdue" : ""}`, tabindex: "0" },
@@ -677,14 +683,14 @@ export const eventView = {
                 "div",
                 { class: "task-header-row" },
                 h("h3", { class: "task-title" }, task.title),
-                h("span", { class: "task-deadline-tag" }, task.deadline_date ? formatDate(task.deadline_date) : `${task.days_until_deadline} days`)
+                h("span", { class: "task-deadline-tag" }, deadline ? formatDate(deadline) : `${task.lead_time_days || 0} days prior`)
               ),
-              h("p", { class: "task-description" }, task.description),
+              h("p", { class: "task-description" }, task.advice || task.description || ""),
               h(
                 "div",
                 { class: "task-meta-foot" },
-                h("span", { class: "task-priority-tag" }, `Priority: ${(task.priority || "important").toUpperCase()}`),
-                h("span", { class: "task-vendor-stage" }, `Stage: ${task.vendor_type || "Coordination"}`)
+                h("span", { class: "task-priority-tag" }, `Priority: ${humanLabel(task.priority || "important")}`),
+                h("span", { class: "task-vendor-stage" }, `Status: ${humanLabel(task.status || "on_track")}`)
               )
             )
           );
@@ -700,7 +706,8 @@ export const eventView = {
   // -------------------------------------------------------------------
   buildChecklistPanel(checklist, timeline, checkedArray) {
     const checkedSet = new Set(Array.isArray(checkedArray) ? checkedArray : []);
-    const totalItems = checklist.total_items;
+    const allItems = checklist.categories ? checklist.categories.flatMap((c) => c.items || []) : (checklist.items || []);
+    const totalItems = allItems.length;
     const completedCount = checkedSet.size;
 
     const panel = h(
@@ -732,7 +739,7 @@ export const eventView = {
             id: "chk-progress-bar",
             class: "native-checklist-progress",
             value: completedCount,
-            max: totalItems,
+            max: Math.max(1, totalItems),
             "aria-label": "Checklist completion progress",
           })
         ),
@@ -839,7 +846,19 @@ export const eventView = {
     if (!timeline || !timeline.tasks) return true;
     const task = timeline.tasks.find((t) => t.category === checklistItem.category_slug || t.task_id === checklistItem.item_id);
     if (!task) return true;
-    return task.days_until_deadline <= 7;
+    if (task.status === "overdue_compressed" || task.status === "due_soon") return true;
+    const deadline = task.target_date || task.deadline_date;
+    if (deadline) {
+      const parts = String(deadline).split("-");
+      if (parts.length === 3) {
+        const target = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const diffDays = Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        return diffDays <= 7;
+      }
+    }
+    return (task.days_until_deadline !== undefined) ? task.days_until_deadline <= 7 : true;
   },
 
   setChecklistFilter(filterKey, buttonEl) {
@@ -1171,12 +1190,12 @@ export const eventView = {
   },
 
   buildSummarySentence(ev, budget) {
-    const type = ev.event_type || "celebration";
+    const type = humanLabel(ev.event_type || "celebration");
     const city = ev.city || "your city";
-    const guests = ev.guest_count || 100;
+    const guests = pluralize(ev.guest_count || 100, "attendee");
     const amount = formatINR(budget.total_budget_inr);
-    const setting = ev.indoor_outdoor || ev.venue_setting || "indoor";
-    return `A ${amount} ${setting} ${type} in ${city} for ${guests} attendees with balanced category allocations.`;
+    const setting = humanLabel(ev.indoor_outdoor || ev.venue_setting || "indoor");
+    return `A ${amount} ${setting.toLowerCase()} ${type.toLowerCase()} in ${city} for ${guests} with balanced category allocations.`;
   },
 
   formatFeasibilitySentence(feasibility) {
@@ -1191,16 +1210,20 @@ export const eventView = {
 
   renderMostUrgentAction(timeline) {
     if (!timeline || !timeline.tasks || timeline.tasks.length === 0) return null;
-    const sorted = [...timeline.tasks].sort((a, b) => a.days_until_deadline - b.days_until_deadline);
-    const urgent = sorted.find((t) => t.status === "overdue_compressed") || sorted.find((t) => t.priority === "critical") || sorted[0];
+    const urgent = timeline.tasks.find((t) => t.status === "overdue_compressed") ||
+                   timeline.tasks.find((t) => t.priority === "critical") ||
+                   timeline.tasks[0];
     if (!urgent) return null;
+
+    const deadline = urgent.target_date || urgent.deadline_date;
+    const deadlineText = deadline ? `Due ${formatDate(deadline)}` : "";
 
     return h(
       "div",
       { class: "urgent-action-banner" },
       h("div", { class: "urgent-text-content" },
         h("span", { class: "urgent-marker" }, urgent.status === "overdue_compressed" ? "Immediate Action Required" : "Most Urgent Milestone"),
-        h("p", { class: "urgent-task-line" }, `${urgent.title} — Due ${urgent.deadline_date ? formatDate(urgent.deadline_date) : `${urgent.days_until_deadline} days`}`)
+        h("p", { class: "urgent-task-line" }, `${urgent.title}${deadlineText ? ` — ${deadlineText}` : ""}`)
       ),
       h(
         "button",
@@ -1218,7 +1241,7 @@ export const eventView = {
             }, 100);
           },
         },
-        "Jump to Task &rarr;"
+        "Jump to Task →"
       )
     );
   },
