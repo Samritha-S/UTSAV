@@ -101,7 +101,7 @@ def test_valid_mocked_gemini_response(sample_event, sample_budget, mock_gemini_j
         settings_instance.has_gemini_key = True
         settings_instance.gemini_api_key = "test-secret-key-12345"
         settings_instance.gemini_model = "gemini-2.5-flash"
-        settings_instance.gemini_timeout_seconds = 20
+        settings_instance.gemini_timeout_seconds = 30
         mock_settings.return_value = settings_instance
 
         mock_client = MagicMock()
@@ -132,7 +132,7 @@ def test_fallback_on_gemini_errors_without_exception(sample_event, sample_budget
         settings_instance.has_gemini_key = True
         settings_instance.gemini_api_key = "test-key"
         settings_instance.gemini_model = "gemini-2.5-flash"
-        settings_instance.gemini_timeout_seconds = 20
+        settings_instance.gemini_timeout_seconds = 30
         mock_settings.return_value = settings_instance
 
         mock_client = MagicMock()
@@ -198,9 +198,11 @@ def test_prompt_construction_and_injection_defense(sample_event, sample_budget):
     assert malicious_prompt not in SYSTEM_INSTRUCTION
     assert sample_event.city not in SYSTEM_INSTRUCTION
 
-    # 4. Critical security directive must be present in system instruction
+    # 4. Critical security and theme generation directives must be present in system instruction
     assert "CRITICAL SECURITY DIRECTIVE" in SYSTEM_INSTRUCTION
     assert "<USER_THEME_NOTES>" in SYSTEM_INSTRUCTION
+    assert "THEME GENERATION DIRECTIVE" in SYSTEM_INSTRUCTION
+    assert "exactly 3 distinct themes" in prompt
 
 
 def test_dietary_filtering_removes_conflicting_dishes(sample_event, sample_budget):
@@ -243,7 +245,7 @@ def test_cache_hits_and_fallback_not_cached(sample_event, sample_budget, mock_ge
         settings_instance.has_gemini_key = True
         settings_instance.gemini_api_key = "test-key"
         settings_instance.gemini_model = "gemini-2.5-flash"
-        settings_instance.gemini_timeout_seconds = 20
+        settings_instance.gemini_timeout_seconds = 30
         mock_settings.return_value = settings_instance
 
         mock_client = MagicMock()
@@ -293,7 +295,7 @@ def test_api_key_never_leaked_in_logs_or_response(sample_event, sample_budget, c
         settings_instance.has_gemini_key = True
         settings_instance.gemini_api_key = secret_key
         settings_instance.gemini_model = "gemini-2.5-flash"
-        settings_instance.gemini_timeout_seconds = 20
+        settings_instance.gemini_timeout_seconds = 30
         mock_settings.return_value = settings_instance
 
         mock_client = MagicMock()
@@ -357,7 +359,7 @@ def test_dietary_filtering_drops_empty_courses_and_triggers_fallback(sample_even
         settings_instance.has_gemini_key = True
         settings_instance.gemini_api_key = "test-key"
         settings_instance.gemini_model = "gemini-2.5-flash"
-        settings_instance.gemini_timeout_seconds = 20
+        settings_instance.gemini_timeout_seconds = 30
         mock_settings.return_value = settings_instance
 
         mock_client = MagicMock()
@@ -406,3 +408,33 @@ def test_source_field_is_server_controlled():
     """Verify GeminiCreativeIdeasPayload does not contain source, and CreativeIdeas source is set by server."""
     assert "source" not in GeminiCreativeIdeasPayload.model_fields
     assert "source" in CreativeIdeas.model_fields
+
+
+def test_thinking_config_disabled_for_low_latency(
+    sample_event, sample_budget, mock_gemini_json_payload
+):
+    """Verify GenerateContentConfig specifies thinking_budget=0 and 30s timeout to minimize latency."""
+    with (
+        patch("app.ai.ideas.get_settings") as mock_settings,
+        patch("app.ai.ideas.genai.Client") as mock_client_cls,
+    ):
+        settings_instance = MagicMock()
+        settings_instance.has_gemini_key = True
+        settings_instance.gemini_api_key = "test-secret-key-12345"
+        settings_instance.gemini_model = "gemini-2.5-flash"
+        settings_instance.gemini_timeout_seconds = 30
+        mock_settings.return_value = settings_instance
+
+        mock_client = MagicMock()
+        mock_response = MagicMock()
+        mock_response.text = mock_gemini_json_payload
+        mock_client.models.generate_content.return_value = mock_response
+        mock_client_cls.return_value = mock_client
+
+        generate_ideas(sample_event, sample_budget)
+
+        call_kwargs = mock_client.models.generate_content.call_args.kwargs
+        config = call_kwargs["config"]
+        assert config.thinking_config is not None
+        assert config.thinking_config.thinking_budget == 0
+        assert config.http_options.timeout == 30000

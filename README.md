@@ -47,9 +47,10 @@ Generic planning applications fail because they either force rigid generic templ
   - Reminds organizers to verify local loudspeaker cutoff rules and food safety certifications with local authorities.
 
 - **Personalized Creative Ideas (Gemini 2.5 Flash)**:
-  - Generates bespoke themes, color palettes, stage layouts, interactive cultural icebreakers, and course-by-course menus respecting dietary preferences (Pure Vegetarian, Jain, Halal, Eggetarian, Non-Vegetarian).
+  - Generates exactly 3 distinct celebratory themes, color palettes, stage layouts, interactive cultural icebreakers, and course-by-course menus respecting dietary preferences (Pure Vegetarian, Jain, Halal, Eggetarian, Non-Vegetarian).
+  - Tuned for low latency by disabling generative reasoning tokens (`thinking_budget=0` in `ThinkingConfig`), slashing response latency from ~15s to ~8s while preserving rich cultural nuance.
   - Sanitizes user input to prevent prompt spoofing and HTML/markdown link injection.
-  - Zero-exception graceful fallback: If the API key is missing, invalid, or times out, curated regional fallbacks render instantly with a clear fallback indicator.
+  - Zero-exception graceful fallback: If the API key is missing, invalid, or times out (30s window), curated regional fallbacks render instantly with a clear fallback indicator.
 
 - **Interactive In-Browser Refinement**:
   - Allows organizers to refine creative ideas dynamically (e.g., *"Make it eco-friendly with marigold and banana leaf decor"* or *"Focus on South Indian breakfast delicacies"*).
@@ -131,7 +132,7 @@ Generic planning applications fail because they either force rigid generic templ
         | Google GenAI Client   |                     | Curated Fallback      |
         | gemini-2.5-flash      |                     | Static Archetypes     |
         | (Structured Schema,   |                     | (Deterministic,       |
-        |  5s Hard Timeout)     |                     |  Dietary-Filtered)    |
+        |  30s Timeout, think=0)|                     |  Dietary-Filtered)    |
         +-----------+-----------+                     +-----------+-----------+
                     |                                             |
          Success?  / \  Exception / Timeout                       |
@@ -291,11 +292,16 @@ All settings are configured via environment variables or a local `.env` file:
 | :--- | :---: | :---: | :--- |
 | `GEMINI_API_KEY` | Optional | `""` | Google Gemini API key. If unset or invalid, the app gracefully falls back to curated regional archetypes. |
 | `GEMINI_MODEL` | Optional | `gemini-2.5-flash` | Gemini model identifier used for creative ideas. |
+| `GEMINI_TIMEOUT_SECONDS` | Optional | `30` | Timeout in seconds for live Gemini API calls before serving fallback ideas. |
 | `ENVIRONMENT` | Optional | `development` | Deployment environment flag (`development`, `staging`, `production`). |
 | `PORT` | Optional | `8000` | HTTP port on which Uvicorn listens. |
 | `HOST` | Optional | `127.0.0.1` | Network interface to bind. |
 | `RATE_LIMIT_AI_PER_MINUTE` | Optional | `10` | Maximum AI-backed planning requests per minute per client IP. |
 | `RATE_LIMIT_GENERAL_PER_MINUTE` | Optional | `60` | Maximum general requests per minute per client IP. |
+| `RATE_LIMIT_PER_MINUTE` | Optional | `30` | General fallback rate limit per client IP. |
+| `CACHE_SIZE` | Optional | `128` | LRU cache capacity for parsed plans and AI idea responses. |
+| `TRUST_PROXY_HEADERS` | Optional | `false` | Respect X-Forwarded-For headers from reverse proxies. |
+| `CORS_ORIGINS` | Optional | `http://localhost:8000,http://127.0.0.1:8000` | Permitted origins for Cross-Origin Resource Sharing. |
 | `LOG_LEVEL` | Optional | `INFO` | Application logging verbosity (`DEBUG`, `INFO`, `WARNING`, `ERROR`). |
 
 ---

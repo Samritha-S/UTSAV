@@ -25,7 +25,7 @@ class Settings:
         self.port: int = int(os.getenv("PORT", "8000"))
         self.gemini_api_key: str = os.getenv("GEMINI_API_KEY", "").strip()
         self.gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash").strip()
-        self.gemini_timeout_seconds: int = int(os.getenv("GEMINI_TIMEOUT_SECONDS", "20"))
+        self.gemini_timeout_seconds: int = int(os.getenv("GEMINI_TIMEOUT_SECONDS", "30"))
         self.rate_limit_ai_per_minute: int = int(os.getenv("RATE_LIMIT_AI_PER_MINUTE", "10"))
         self.rate_limit_general_per_minute: int = int(
             os.getenv("RATE_LIMIT_GENERAL_PER_MINUTE", "60")
