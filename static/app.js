@@ -1,22 +1,32 @@
 /**
  * Utsav Planner - Main Application Entry Point
  *
- * Coordinates state, event listeners, form validation, keyboard tab navigation,
- * and reactive rendering.
+ * Coordinates 3-step guided intake wizard, form validation, live budget reactions,
+ * text-based loading stages, keyboard tab navigation, and reactive rendering.
  *
  * STRICT SECURITY:
  * - Loaded as ES Module (<script type="module" src="/static/app.js">)
  * - Zero inline scripts, zero inline styles.
  * - No innerHTML, outerHTML, insertAdjacentHTML, document.write, or eval anywhere.
+ * - NO badge or pill class names.
  */
 
-import { formatINR, formatINRWords, getOffsetDateString, SAMPLE_PRESETS } from "./js/utils.js";
+import { formatINR, formatINRWords, formatPerGuestReaction, getOffsetDateString, SAMPLE_PRESETS } from "./js/utils.js";
 import { store } from "./js/state.js";
 import { createPlan } from "./js/api.js";
 import { renderDashboard } from "./js/render.js";
 
+// Wizard Step Tracking
+let currentStep = 1;
+let loadingStageTimer = null;
+
 // DOM Element References
 let formEl;
+let stepIndicatorEl;
+let step1PanelEl;
+let step2PanelEl;
+let step3PanelEl;
+let guestInputEl;
 let budgetInputEl;
 let budgetPreviewEl;
 let themeNotesEl;
@@ -25,6 +35,7 @@ let ageGroupContainerEl;
 let sampleBtnEl;
 let submitBtnEl;
 let loadingEl;
+let loadingStageTextEl;
 let errorBannerEl;
 let resultsContainerEl;
 
@@ -34,6 +45,7 @@ let resultsContainerEl;
 document.addEventListener("DOMContentLoaded", () => {
   initElementReferences();
   initFormListeners();
+  initWizardNavigation();
   initTabKeyboardListeners();
   initGlobalErrorBanner();
 
@@ -51,42 +63,67 @@ document.addEventListener("DOMContentLoaded", () => {
  */
 function initElementReferences() {
   formEl = document.getElementById("intake-form");
+  stepIndicatorEl = document.getElementById("step-indicator");
+  step1PanelEl = document.getElementById("step-1-panel");
+  step2PanelEl = document.getElementById("step-2-panel");
+  step3PanelEl = document.getElementById("step-3-panel");
+
+  guestInputEl = document.getElementById("guest-count");
   budgetInputEl = document.getElementById("budget-inr");
   budgetPreviewEl = document.getElementById("budget-preview");
   themeNotesEl = document.getElementById("theme-notes");
   themeNotesCounterEl = document.getElementById("notes-counter");
   ageGroupContainerEl = document.getElementById("age-group-container");
+
   sampleBtnEl = document.getElementById("sample-plan-btn");
   submitBtnEl = document.getElementById("submit-plan-btn");
   loadingEl = document.getElementById("loading-indicator");
+  loadingStageTextEl = document.getElementById("loading-stage-text");
   errorBannerEl = document.getElementById("global-error");
   resultsContainerEl = document.getElementById("results-container");
 }
 
 /**
- * Bind form listeners: input validation, character counters, sample presets, and submission.
+ * Bind form listeners: budget preview reactions, character counter, birthday age toggle.
  */
 function initFormListeners() {
   if (!formEl) return;
 
-  // 1. Live Budget Preview
-  if (budgetInputEl && budgetPreviewEl) {
-    const updatePreview = () => {
-      const val = parseInt(budgetInputEl.value, 10);
-      if (!isNaN(val) && val > 0) {
-        budgetPreviewEl.textContent = `${formatINR(val)} ${formatINRWords(val)}`;
-      } else {
-        budgetPreviewEl.textContent = "₹0";
-      }
-    };
-    budgetInputEl.addEventListener("input", updatePreview);
-    updatePreview();
+  // 1. Live Budget & Per-Guest Reaction Preview
+  const updateBudgetPreview = () => {
+    if (!budgetInputEl || !budgetPreviewEl) return;
+    const budgetVal = parseInt(budgetInputEl.value, 10);
+    const guestVal = parseInt(guestInputEl?.value, 10) || 1;
+
+    if (!isNaN(budgetVal) && budgetVal > 0) {
+      const inrStr = formatINR(budgetVal);
+      const wordsStr = formatINRWords(budgetVal);
+      const reactionStr = formatPerGuestReaction(budgetVal, guestVal);
+      budgetPreviewEl.textContent = `${inrStr} ${wordsStr} ${reactionStr ? `— ${reactionStr}` : ""}`;
+    } else {
+      budgetPreviewEl.textContent = "₹0";
+    }
+  };
+
+  if (budgetInputEl) {
+    budgetInputEl.addEventListener("input", updateBudgetPreview);
   }
+  if (guestInputEl) {
+    guestInputEl.addEventListener("input", updateBudgetPreview);
+  }
+  updateBudgetPreview();
 
   // 2. Theme Notes Character Counter
   if (themeNotesEl && themeNotesCounterEl) {
     const updateCounter = () => {
-      themeNotesCounterEl.textContent = `${themeNotesEl.value.length} / 400`;
+      const len = themeNotesEl.value.length;
+      themeNotesCounterEl.textContent = `${len} / 400`;
+      // Highlighting when near limit
+      if (len >= 350) {
+        themeNotesCounterEl.classList.add("text-vermilion");
+      } else {
+        themeNotesCounterEl.classList.remove("text-vermilion");
+      }
     };
     themeNotesEl.addEventListener("input", updateCounter);
     updateCounter();
@@ -107,11 +144,121 @@ function initFormListeners() {
       const preset = SAMPLE_PRESETS[selectedType] || SAMPLE_PRESETS.wedding;
       hydrateFormFromState(preset);
       clearAllFieldErrors();
+      // If user clicks sample plan while on step 1, advance to step 2 or stay
+      updateBudgetPreview();
     });
   }
 
   // 5. Form Submit Handler
   formEl.addEventListener("submit", handleFormSubmit);
+}
+
+/**
+ * Configure 3-step wizard navigation with per-step validation.
+ */
+function initWizardNavigation() {
+  const step1NextBtn = document.getElementById("step-1-next-btn");
+  const step2BackBtn = document.getElementById("step-2-back-btn");
+  const step2NextBtn = document.getElementById("step-2-next-btn");
+  const step3BackBtn = document.getElementById("step-3-back-btn");
+
+  if (step1NextBtn) {
+    step1NextBtn.addEventListener("click", () => {
+      clearAllFieldErrors();
+      const dateVal = document.getElementById("event-date")?.value;
+      const cityVal = (document.getElementById("city")?.value || "").trim();
+
+      const step1Errors = {};
+      if (!dateVal) {
+        step1Errors.event_date = "Please select an event date.";
+      } else {
+        const selectedDate = new Date(dateVal);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (selectedDate < today) {
+          step1Errors.event_date = "Event date cannot be in the past.";
+        }
+      }
+
+      if (!cityVal || cityVal.length < 2 || cityVal.length > 50) {
+        step1Errors.city = "City name must be between 2 and 50 characters.";
+      }
+
+      if (Object.keys(step1Errors).length > 0) {
+        displayFieldErrors(step1Errors);
+        const firstEl = getFieldElementByKey(Object.keys(step1Errors)[0]);
+        if (firstEl) firstEl.focus();
+        return;
+      }
+
+      goToStep(2);
+      if (guestInputEl) guestInputEl.focus();
+    });
+  }
+
+  if (step2BackBtn) {
+    step2BackBtn.addEventListener("click", () => {
+      goToStep(1);
+      const dateEl = document.getElementById("event-date");
+      if (dateEl) dateEl.focus();
+    });
+  }
+
+  if (step2NextBtn) {
+    step2NextBtn.addEventListener("click", () => {
+      clearAllFieldErrors();
+      const guestsVal = parseInt(guestInputEl?.value, 10);
+      const budgetVal = parseInt(budgetInputEl?.value, 10);
+
+      const step2Errors = {};
+      if (isNaN(guestsVal) || guestsVal < 10 || guestsVal > 5000) {
+        step2Errors.guest_count = "Guest count must be between 10 and 5,000 attendees.";
+      }
+      if (isNaN(budgetVal) || budgetVal < 10000 || budgetVal > 100000000) {
+        step2Errors.budget_inr = "Budget must be between ₹10,000 and ₹10,00,00,000.";
+      }
+
+      if (Object.keys(step2Errors).length > 0) {
+        displayFieldErrors(step2Errors);
+        const firstEl = getFieldElementByKey(Object.keys(step2Errors)[0]);
+        if (firstEl) firstEl.focus();
+        return;
+      }
+
+      goToStep(3);
+      const venueEl = document.getElementById("venue-setting");
+      if (venueEl) venueEl.focus();
+    });
+  }
+
+  if (step3BackBtn) {
+    step3BackBtn.addEventListener("click", () => {
+      goToStep(2);
+      if (budgetInputEl) budgetInputEl.focus();
+    });
+  }
+}
+
+/**
+ * Switch active wizard step panel and update step indicator text.
+ * @param {number} step
+ */
+function goToStep(step) {
+  currentStep = step;
+
+  const stepLabels = {
+    1: "Step 1 of 3: What are you celebrating",
+    2: "Step 2 of 3: The guests and the money",
+    3: "Step 3 of 3: Preferences & details",
+  };
+
+  if (stepIndicatorEl) {
+    stepIndicatorEl.textContent = stepLabels[step] || `Step ${step} of 3`;
+  }
+
+  if (step1PanelEl) step1PanelEl.classList.toggle("is-hidden", step !== 1);
+  if (step2PanelEl) step2PanelEl.classList.toggle("is-hidden", step !== 2);
+  if (step3PanelEl) step3PanelEl.classList.toggle("is-hidden", step !== 3);
 }
 
 /**
@@ -143,8 +290,16 @@ async function handleFormSubmit(e) {
 
   if (Object.keys(errors).length > 0) {
     displayFieldErrors(errors);
-    // Accessibility: Focus the first invalid field
+    // Find which step contains the first error
     const firstInvalidKey = Object.keys(errors)[0];
+    if (firstInvalidKey === "event_date" || firstInvalidKey === "city") {
+      goToStep(1);
+    } else if (firstInvalidKey === "guest_count" || firstInvalidKey === "budget_inr") {
+      goToStep(2);
+    } else {
+      goToStep(3);
+    }
+
     const firstInvalidEl = getFieldElementByKey(firstInvalidKey);
     if (firstInvalidEl && typeof firstInvalidEl.focus === "function") {
       firstInvalidEl.focus();
@@ -154,11 +309,17 @@ async function handleFormSubmit(e) {
 
   // Store form inputs in state
   store.updateFormInputs(values);
+  startHonestLoadingSequence();
   store.setLoading(true);
 
   try {
     const plan = await createPlan(values);
+    stopHonestLoadingSequence();
     store.setPlan(plan);
+
+    // Hide intake form card and show results
+    const formCard = document.querySelector(".form-card");
+    if (formCard) formCard.classList.add("is-hidden");
 
     // Accessibility: shift focus to results summary heading
     setTimeout(() => {
@@ -169,9 +330,41 @@ async function handleFormSubmit(e) {
       }
     }, 100);
   } catch (err) {
+    stopHonestLoadingSequence();
     store.setError(err);
     showGlobalError(err);
   }
+}
+
+/**
+ * Start honest text-based progress cycling:
+ * 0s: "Working out your budget allocations..."
+ * 3s: "Building your backward-scheduled timeline..."
+ * 6s+: "Formulating cultural ideas with Gemini 2.5 Flash (~8–15s)..."
+ */
+function startHonestLoadingSequence() {
+  if (!loadingStageTextEl) return;
+  const stages = [
+    "Working out your budget allocations...",
+    "Building your backward-scheduled timeline...",
+    "Formulating cultural ideas with Gemini 2.5 Flash (~8–15 seconds)...",
+  ];
+
+  let stageIdx = 0;
+  loadingStageTextEl.textContent = stages[0];
+
+  clearInterval(loadingStageTimer);
+  loadingStageTimer = setInterval(() => {
+    stageIdx = Math.min(stages.length - 1, stageIdx + 1);
+    if (loadingStageTextEl) {
+      loadingStageTextEl.textContent = stages[stageIdx];
+    }
+  }, 3000);
+}
+
+function stopHonestLoadingSequence() {
+  clearInterval(loadingStageTimer);
+  loadingStageTimer = null;
 }
 
 /**
@@ -239,7 +432,7 @@ function validateFormValues(values) {
 
   // Budget INR (10,000 to 100,000,000)
   if (!values.budget_inr || values.budget_inr < 10000 || values.budget_inr > 100000000) {
-    errors.budget_inr = "Total budget must be between ₹10,000 and ₹10,00,00,000 (10 Cr).";
+    errors.budget_inr = "Total budget must be between ₹10,000 and ₹10,00,00,000.";
   }
 
   // City (2 to 50 chars)
@@ -338,8 +531,8 @@ function hydrateFormFromState(inputs) {
   };
 
   setVal("event-date", inputs.event_date || getOffsetDateString(60));
-  setVal("guest-count", inputs.guest_count || 100);
-  setVal("budget-inr", inputs.budget_inr || 1000000);
+  setVal("guest-count", inputs.guest_count || 200);
+  setVal("budget-inr", inputs.budget_inr || 1500000);
   setVal("city", inputs.city || "Jaipur");
   setVal("city-tier", inputs.city_tier || "tier2");
   setVal("venue-setting", inputs.venue_setting || "indoor");
@@ -358,7 +551,7 @@ function hydrateFormFromState(inputs) {
 }
 
 /**
- * Display global error banner with retry action.
+ * Display global error banner with one clear action in plain language.
  * @param {Error|ApiError} err
  */
 function showGlobalError(err) {
@@ -368,16 +561,17 @@ function showGlobalError(err) {
     errorBannerEl.removeChild(errorBannerEl.firstChild);
   }
 
-  const msgText = err.userMessage || err.message || "An unexpected error occurred.";
+  const msgText = err.userMessage || err.message || "An unexpected error occurred. Please verify your inputs and retry.";
+
   const iconSpan = document.createElement("span");
   iconSpan.textContent = "⚠️ ";
   errorBannerEl.appendChild(iconSpan);
 
   const textSpan = document.createElement("span");
+  textSpan.className = "error-text";
   textSpan.textContent = msgText;
   errorBannerEl.appendChild(textSpan);
 
-  // If retryable, add a retry button
   const retryBtn = document.createElement("button");
   retryBtn.type = "button";
   retryBtn.className = "btn btn-outline btn-sm";
@@ -402,7 +596,7 @@ function hideGlobalError() {
 
 /**
  * WAI-ARIA Tabs Keyboard Navigation Handler.
- * Supports Left/Right arrow keys, Home, End, and roving tabindex.
+ * Supports Left/Right/Up/Down arrow keys, Home, End, and roving tabindex.
  */
 function initTabKeyboardListeners() {
   document.addEventListener("keydown", (e) => {
@@ -463,15 +657,18 @@ function handleStateChange(state) {
   // 2. Submit Button state
   if (submitBtnEl) {
     submitBtnEl.disabled = state.loading;
-    submitBtnEl.textContent = state.loading ? "Synthesizing Event Plan..." : "Generate Event Plan";
+    submitBtnEl.textContent = state.loading ? "Formulating Programme..." : "Generate Event Plan";
   }
 
-  // 3. Render Results Dashboard
+  // 3. Render Results Programme
   if (resultsContainerEl) {
+    const formCard = document.querySelector(".form-card");
     if (state.currentPlan) {
+      if (formCard) formCard.classList.add("is-hidden");
       resultsContainerEl.classList.remove("is-hidden");
       renderDashboard(resultsContainerEl, state.currentPlan, state.activeTab, state.checkedItems);
     } else {
+      if (formCard) formCard.classList.remove("is-hidden");
       resultsContainerEl.classList.add("is-hidden");
       while (resultsContainerEl.firstChild) {
         resultsContainerEl.removeChild(resultsContainerEl.firstChild);
