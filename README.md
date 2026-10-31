@@ -28,43 +28,41 @@ Generic planning applications fail because they either force rigid generic templ
 
 ## 2. Core Features
 
-- **Deterministic Budget Engine**:
+- **Deterministic Budget Engine & Fast `/api/budget` Endpoint**:
   - Allocates entire budgets across event-specific category slugs (`venue_infrastructure`, `catering_food`, `decor_florals`, `photography_video`, `entertainment_sound`, `attire_styling`, `invitations_favors`, `logistics_permits`, `contingency`).
   - Factors in city tier multipliers (Metro, Tier-2, Tier-3), indoor/outdoor staging requirements, guest-count economies of scale, and seasonal demand peaks (wedding muhurat months and major festivals).
   - Evaluates financial feasibility with a four-tier verdict (`comfortable`, `realistic`, `tight`, `unrealistic`) based on real-world per-guest spending floors.
   - Guarantees exact sum matching down to the single rupee with zero rounding discrepancies.
+  - Dedicated fast endpoint `POST /api/budget` providing instant, lightweight budget calculations for live sliders and what-if simulations.
 
-- **Backwards Timeline Engine**:
-  - Computes target deadlines by calculating backwards from the event date relative to Indian Standard Time (Asia/Kolkata).
-  - Categorizes task status dynamically as `overdue`, `urgent`, `in_progress`, or `upcoming`.
-  - Enforces dependency sequencing (e.g., locks venue before decor contracts or catering menus).
-  - Automatically activates an aggressive 7-day **Crunch Mode** for last-minute hosts, flagging non-essential tasks and prioritizing emergency vendor bookings.
+- **Multi-Screen Hash-Routed Experience**:
+  - Pure vanilla JS hash router (`static/js/router.js`) supporting `#/` (Landing & Live Demo), `#/plan` (Intake Wizard), `#/event/<id>` (Event Programme), and `#/events` (Saved Events Index).
+  - Full view lifecycle (`mount` / `unmount`), browser Back/Forward navigation, programmatic `<h1>` focus shifting, and screen reader announcements (`#route-announcer`).
 
-- **Vendor & Compliance Checklist Engine**:
-  - Maps 1-to-1 with budget categories and injects India-specific compliance requirements.
-  - Adapts to outdoor settings (shamiana rainproofing, generator backups, green room air-cooling).
-  - Tailors advice for large gatherings (>500 guests: ambulance on standby, queue stanchions, municipal trash clearance).
-  - Reminds organizers to verify local loudspeaker cutoff rules and food safety certifications with local authorities.
+- **Interactive "What if…" Budget Scenario Simulator**:
+  - Live guest-count and budget sliders on the Plan view that query `/api/budget` (debounced ~250ms, in-memory cache, AbortController cancellation).
+  - Typesets real-time rupee differences ("₹42,000 more on catering than your plan") without silently altering the saved event.
+
+- **Client-Side RFC 5545 Calendar Export (`.ics`)**:
+  - Pure ES module (`static/js/lib/ics.js`) generating standards-compliant `.ics` files for timeline milestones.
+  - Generates all-day `VEVENT` entries with stable UIDs, 75-octet line folding, CRLF line endings, and proper date rollovers across month and leap-year boundaries.
+
+- **Vendor Checklist with "Do This Week" Focus View**:
+  - Categorized checklist with a default "Do this week" filter focusing on tasks due within 7 days or overdue.
+  - Large accessible checkboxes, native `<progress>` indicators, and quiet text acknowledgements upon category completion.
+
+- **Curated Creative Ideas & Shortlist**:
+  - Bespoke cultural themes, authentic regional menus, and interactive activities.
+  - "Keep" / "Kept" toggle buttons allow organizers to bookmark favorite concepts into a persistent "Your shortlist" collection.
+  - One-click "Show me different ideas" action for refreshing concepts without manual prompts.
+
+- **Multi-Event Persistence (Schema `utsav_v3`)**:
+  - Stores up to 20 distinct celebratory events in `localStorage` with automated migration from legacy single-plan (`utsav_v2`) stores.
+  - Ruled saved events index supporting open, rename, duplicate, and delete with confirmation.
 
 - **"The Printed Programme" Editorial Design System**:
   - Typeset like an elegant invitation booklet and traditional shopkeeper's ledger on warm paper (`#FBF7EF`) with near-black ink (`#1F1B16`), deep forest green (`#1F5B45`), marigold (`#E0A100`), and vermilion (`#B3261E`) for urgent milestones.
-  - Zero gradients, zero pill/badge capsules, sharp/2px editorial corners, and authentic geometric Kolam/Rangoli vector motifs.
-  - Guided 3-step intake flow with live Indian currency groupings, per-guest spending reactions, and one-line tier explanations.
-  - Honest text-based loading stages cycling through real calculation steps without fake spinner illusions.
-
-- **Personalized Creative Ideas (Gemini 2.5 Flash)**:
-  - Generates exactly 3 distinct celebratory themes, color palettes, stage layouts, interactive cultural icebreakers, and course-by-course menus respecting dietary preferences (Pure Vegetarian, Jain, Halal, Eggetarian, Non-Vegetarian).
-  - Tuned for low latency by disabling generative reasoning tokens (`thinking_budget=0` in `ThinkingConfig`), slashing response latency from ~15s to ~8s while preserving rich cultural nuance.
-  - Sanitizes user input to prevent prompt spoofing and HTML/markdown link injection.
-  - Zero-exception graceful fallback: If the API key is missing, invalid, or times out (30s window), curated regional fallbacks render instantly with a clear fallback indicator.
-
-- **Interactive In-Browser Refinement**:
-  - Allows organizers to refine creative ideas dynamically via plain suggestion links (e.g., *"Make it eco-friendly with marigold and banana leaf decor"* or *"Focus on South Indian breakfast delicacies"*).
-  - Enforces client-side and server-side rate limits (max 5 refinements per session, 10 AI requests/minute, 60 general requests/minute).
-
-- **Offline-First Persistence & Print Programme**:
-  - Automatically saves the complete event plan and checklist completion states to browser `localStorage` (versioned `utsav_v2` schema).
-  - Includes a publication-grade print stylesheet (`window.print()`) that typesets the entire plan as a clean, multi-page programme with page-break controls and zero navigation clutter.
+  - Zero gradients, zero pill/badge capsules, sharp 2px editorial corners, plain text labels or inline SVG marks (zero emoji), and authentic geometric Kolam/Rangoli vector motifs.
 
 ---
 
@@ -418,12 +416,58 @@ Refines creative concepts based on organizer instructions while maintaining stri
 **Request Body Example**:
 ```json
 {
-  "original_plan": { "..." : "..." },
-  "refinement_instruction": "Make the menu entirely North Indian street food style"
+  "event_input": { ... },
+  "refinement_prompt": "Make the menu entirely North Indian street food style"
 }
 ```
 
-### 3. `GET /api/health`
+### 3. `POST /api/budget`
+Fast deterministic budget allocation and feasibility assessment without triggering creative AI generation, timeline scheduling, or checklist computation. Powers the landing page live demo and the plan view's "What if…" budget scenario simulator.
+
+- **Rate Limit**: General API tier (60 requests/minute per client IP, leaving the stricter 10 req/min AI limit completely untouched).
+- **Latency**: Sub-10ms pure mathematical execution.
+- **Payload Limits**: 64 KB maximum payload and strict `Content-Type: application/json`.
+- **Headers**: Includes standard `Cache-Control: no-store`, `X-Content-Type-Options: nosniff`, and `X-Frame-Options: DENY`.
+
+**Request Body**: Same `EventInput` schema as `/api/plan`.
+
+**Response Body**:
+```json
+{
+  "budget": {
+    "total_budget_inr": 1800000,
+    "currency": "INR",
+    "cost_per_guest_inr": 7200.0,
+    "contingency_inr": 180000,
+    "contingency_percentage": 10.0,
+    "categories": [
+      {
+        "category_slug": "venue_infrastructure",
+        "name": "Venue & Infrastructure",
+        "allocated_inr": 486000,
+        "percentage": 27.0,
+        "description": "Main banquet hall or palace lawn..."
+      }
+    ],
+    "feasibility": {
+      "is_feasible": true,
+      "verdict": "comfortable",
+      "floor_per_guest_inr": 4000.0,
+      "actual_per_guest_inr": 7200.0,
+      "suggestions": []
+    }
+  },
+  "feasibility": {
+    "is_feasible": true,
+    "verdict": "comfortable",
+    "floor_per_guest_inr": 4000.0,
+    "actual_per_guest_inr": 7200.0,
+    "suggestions": []
+  }
+}
+```
+
+### 4. `GET /api/health`
 Health check and readiness endpoint.
 ```json
 {
@@ -461,61 +505,61 @@ Health check and readiness endpoint.
 
 ## 11. Accessibility & Visual Design
 
-- **Semantic HTML5**: Native form elements (`<fieldset>`, `<legend>`, `<label>`, `<output>`, `<section>`).
-- **Form Association**: Every form input is strictly linked to a corresponding `<label for="...">`.
-- **Keyboard Navigation**: Logical tab order, visible focus rings, and accessible keyboard toggles for all checklist items.
-- **Screen Reader Readiness**: ARIA live regions (`aria-live="polite"`) announce plan generation and error states.
-- **Color Palette Compliance**:
-  - Warm Indian celebration theme: Deep marigold gold (`#b87400`), warm terracotta/coral (`#b84414`), deep forest emerald (`#175438`), and warm parchment background (`#fcfbf7`).
-  - **Distinctive Color Scheme**: Authentic warm Indian celebration palette strictly adhering to marigold, terracotta, and deep forest emerald aesthetics, validated by automated colorimetry tests.
+- **Semantic HTML5 & Landmarks**: Accessible landmarks (`<header>`, `<nav>`, `<main id="app-root">`, `<section>`, `<footer>`), structured headings (`<h1>` through `<h4>`), and native `<progress>` elements.
+- **Form Association**: Every interactive control (including intake fields, what-if sliders, and demo controls) is strictly linked to an explicit `<label for="...">`.
+- **Keyboard Navigation & ARIA Tabs**: Full keyboard operability; tabs implement the standard WAI-ARIA pattern (Left/Right arrow keys, Home/End navigation, roving tabindex `0` / `-1`, and `aria-selected`).
+- **Focus Management & Route Announcements**: Navigating between hash screens automatically shifts focus to the view's primary `<h1>` heading. Screen reader route changes are announced via `#route-announcer` (`aria-live="polite"`).
+- **Accessible Slider Controls**: Live range sliders feature `aria-valuemin`, `aria-valuemax`, `aria-valuenow`, and `aria-valuetext` formatted in Indian numbers and currency (`₹7,500 per guest`).
+- **Restrained Motion**: Subtle opacity view transitions are disabled under `@media (prefers-reduced-motion: reduce)`. Zero bouncing, looping, or distracting particle animations.
+- **Editorial Design System ("The Printed Programme")**:
+  - Warm Indian celebration theme: Deep forest green (`#1F5B45`), marigold gold (`#E0A100`), vermilion red (`#B3261E`), near-black ink (`#1F1B16`), and warm paper (`#FBF7EF`).
+  - Zero gradients, zero pill/badge capsules, sharp 2px editorial corners, plain text labels or inline SVG marks (zero emoji), and authentic geometric Kolam/Rangoli vector motifs.
   - High text-to-background contrast ratios engineered to meet WCAG 2.1 AA readability standards (4.5:1+ for body text).
 
 ---
 
 ## 12. Testing Suite
 
-The project includes **75 comprehensive automated tests** across unit, engine, integration, and security layers:
+The project includes **88 comprehensive automated tests** across backend engines, API security layers, static asset compliance, and client-side modules:
 
 ```powershell
 python -m pytest -v
 ```
 
 ### Test Breakdown
-- **`test_budget.py` (10 tests)**:
+- **`test_budget_api.py` (8 tests)**:
+  - Exact rupee sum match for all event types (`wedding`, `birthday`, `community`).
+  - Standardized validation error format without user input echoing.
+  - Verification that `/api/budget` is purely deterministic and never touches `generate_ideas`.
+  - Rate limiting behavior: consumes general rate limiter without affecting AI rate limiter; returns 429 with `Retry-After` header when exhausted.
+  - Payload limits (64 KB) and security headers (`Cache-Control: no-store`, `nosniff`, `DENY`).
+- **`test_js_ics.py` (1 test running Node.js test suite)**:
+  - Executes `tests/js/test_ics_router.mjs` verifying RFC 5545 iCalendar escaping, 75-octet line folding, CRLF line endings, date rollovers across month and leap-year boundaries, stable UIDs, and pure route parsing. Skips gracefully if Node is not installed.
+- **`test_static.py` (9 tests)**:
+  - Strict CSP compliance (zero inline scripts and zero inline style attributes).
+  - Absolute ban on `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write`, and `eval`.
+  - Zero external URLs across all static assets.
+  - Recursive verification of Content-Type delivery for all JS modules across subdirectories.
+  - Associated `<label>` matching for every form control in `index.html`.
+  - Automated HSV hue analysis verifying CSS contains zero forbidden purple/violet hues (255°–320°).
+  - Zero CSS gradients and strict border-radius limits (max 4px, except 50% for circles).
+  - Ban on class names matching `badge` or `pill`.
+- **`test_budget.py` (14 tests)**:
   - Exact sum equality ($B = \sum c_i$) across all combinations of event types, tiers, and venues.
   - Scaled contingency calculation within 5%–15% bounds.
-  - Metro vs. Tier-3 weight shifts.
-  - Feasibility floor verdicts (`comfortable`, `realistic`, `tight`, `unrealistic`).
-  - Deterministic repeatability and boundary conditions.
+  - Metro vs. Tier-3 weight shifts and feasibility floor verdicts.
 - **`test_timeline.py` (11 tests)**:
   - Backwards date calculation relative to fixed calendar anchors.
-  - Dynamic status transitions (`overdue`, `urgent`, `in_progress`, `upcoming`).
-  - 7-day crunch mode activation and non-essential task deprecation.
-  - Dependency order verification and edge cases (same-day, next-day, >12 months away).
+  - Dynamic status transitions and 7-day crunch mode activation.
 - **`test_checklist.py` (8 tests)**:
-  - 1-to-1 slug consistency with budget categories.
-  - Unique ID enforcement across all checklist items.
+  - 1-to-1 slug consistency with budget categories and unique item IDs.
   - India-specific advisory presence (sound cutoffs, electrical clearances, food safety).
-  - Outdoor and large gathering (>500 guests) adaptations.
-- **`test_ideas.py` (14 tests)**:
-  - Valid Gemini API generation with structured output schemas.
-  - Graceful zero-exception fallback on timeout, invalid JSON, or missing API key.
-  - Prompt injection defense and angle-bracket neutralization.
-  - Strict dietary filtering (removes conflicting dishes and drops empty courses).
-  - Server-controlled `source` field validation.
+- **`test_ideas.py` (16 tests)**:
+  - Gemini API generation, prompt injection defense, dietary filtering, and server-controlled source tag validation.
 - **`test_api.py` (16 tests)**:
-  - End-to-end plan generation across all event types.
-  - Rate limiting enforcement (429) and stale IP eviction.
-  - Request payload size enforcement (413) and content-type enforcement (415).
-  - Security headers verification (CSP, HSTS, X-Content-Type-Options).
-  - Deterministic date dependency injection in `Asia/Kolkata` time zone.
-- **`test_static.py` (6 tests)**:
-  - CSP and static asset content types (`text/html`, `text/css`, `application/javascript`).
-  - Ban on `innerHTML`, `outerHTML`, and inline scripts.
-  - Explicit `<label>` to `<input>` associations across all form elements.
-  - Automated HSV hue analysis verifying styles.css contains no forbidden purple/violet hues (255°–320°).
-- **`test_smoke.py` (10 tests)**:
-  - Health check endpoint verification, index.html serving, and Pydantic schema validation.
+  - Plan generation, rate limiting (429), payload limits (413), content-type verification (415), and security headers.
+- **`test_smoke.py` (5 tests)**:
+  - Health check endpoint verification, index.html delivery, and Pydantic schema validation.
 
 ---
 

@@ -51,10 +51,11 @@ def test_static_files_served_with_correct_content_types(client):
         for mime in ["javascript", "text/javascript"]
     )
 
-    # Sub-modules in static/js/
-    for js_file in (STATIC_DIR / "js").glob("*.js"):
-        res_sub = client.get(f"/static/js/{js_file.name}")
-        assert res_sub.status_code == 200, f"Failed to serve /static/js/{js_file.name}"
+    # Sub-modules across all static directories
+    for js_file in STATIC_DIR.rglob("*.js"):
+        rel_posix = js_file.relative_to(STATIC_DIR).as_posix()
+        res_sub = client.get(f"/static/{rel_posix}")
+        assert res_sub.status_code == 200, f"Failed to serve /static/{rel_posix}"
         assert any(
             mime in res_sub.headers.get("Content-Type", "")
             for mime in ["javascript", "text/javascript"]
