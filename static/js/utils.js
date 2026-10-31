@@ -8,6 +8,91 @@
  */
 
 /**
+ * Map raw enum values and technical keys to natural human labels.
+ */
+export const HUMAN_LABELS = {
+  // Event Types
+  wedding: "Wedding",
+  birthday: "Birthday",
+  community: "Community Celebration",
+
+  // City Tiers
+  metro: "Metro (Tier 1)",
+  tier2: "Tier 2",
+  tier3: "Tier 3",
+  tier_1: "Metro (Tier 1)",
+  tier_2: "Tier 2",
+  tier_3: "Tier 3",
+
+  // Venue Settings
+  indoor: "Indoor",
+  outdoor: "Outdoor",
+  mixed: "Indoor & Outdoor",
+  both: "Indoor & Outdoor",
+  indoor_banquet: "Indoor Banquet",
+  outdoor_lawn: "Outdoor Lawn",
+
+  // Dietary Preferences
+  vegetarian: "Vegetarian",
+  veg: "Vegetarian",
+  veg_only: "Vegetarian",
+  non_veg: "Non-Vegetarian",
+  "non-veg": "Non-Vegetarian",
+  jain: "Jain",
+  pure_jain: "Jain",
+  vegan: "Vegan",
+  halal: "Halal",
+  sattvic: "Sattvic",
+
+  // Task Priorities
+  critical: "Critical",
+  important: "Important",
+  optional: "Optional",
+
+  // Task Statuses
+  on_track: "On Track",
+  due_soon: "Due Soon",
+  overdue_compressed: "Overdue",
+
+  // Age Groups
+  kids: "Kids (0–12 yrs)",
+  teens: "Teens (13–19 yrs)",
+  adults: "Adults (20–59 yrs)",
+  seniors: "Seniors (60+ yrs)",
+};
+
+/**
+ * Return a user-friendly label for any internal identifier or enum.
+ * @param {string} key
+ * @returns {string}
+ */
+export function humanLabel(key) {
+  if (!key) return "";
+  const normalized = String(key).toLowerCase().trim();
+  if (HUMAN_LABELS[normalized]) {
+    return HUMAN_LABELS[normalized];
+  }
+  // Fallback: title case with underscores replaced by spaces
+  const unslugged = String(key).replace(/_/g, " ");
+  return unslugged.charAt(0).toUpperCase() + unslugged.slice(1);
+}
+
+/**
+ * Pluralize a noun with correct English singular/plural form.
+ * e.g. pluralize(1, "guest") -> "1 guest"
+ * e.g. pluralize(25, "guest") -> "25 guests"
+ * @param {number} count
+ * @param {string} singular
+ * @param {string} [plural]
+ * @returns {string}
+ */
+export function pluralize(count, singular, plural = null) {
+  const n = Math.abs(Number(count) || 0);
+  const p = plural || `${singular}s`;
+  return `${count} ${n === 1 ? singular : p}`;
+}
+
+/**
  * Format a numeric amount into Indian Rupee representation with lakh/crore grouping.
  * e.g. 1500000 -> "₹15,00,000"
  * @param {number} amount
@@ -25,7 +110,36 @@ export function formatINR(amount) {
 }
 
 /**
- * Format a numeric amount in words / concise label (e.g. "15 Lakh", "1.2 Crore").
+ * Format a numeric amount in compact Indian notation for space-constrained UI elements.
+ * e.g. 1500000 -> "₹15 lakh", 25000000 -> "₹2.5 crore"
+ * @param {number} amount
+ * @returns {string}
+ */
+export function formatCompactINR(amount) {
+  if (amount === null || amount === undefined || isNaN(amount) || amount === 0) {
+    return "₹0";
+  }
+  const num = Math.round(amount);
+  const sign = num < 0 ? "-" : "";
+  const abs = Math.abs(num);
+
+  if (abs >= 10000000) {
+    const cr = (abs / 10000000).toFixed(2).replace(/\.00$/, "");
+    return `${sign}₹${cr} crore`;
+  }
+  if (abs >= 100000) {
+    const lk = (abs / 100000).toFixed(2).replace(/\.00$/, "");
+    return `${sign}₹${lk} lakh`;
+  }
+  if (abs >= 1000) {
+    const k = (abs / 1000).toFixed(1).replace(/\.0$/, "");
+    return `${sign}₹${k}k`;
+  }
+  return formatINR(amount);
+}
+
+/**
+ * Format a numeric amount in words for accessible descriptions (e.g. "(15 Lakh)", "(1.2 Crore)").
  * @param {number} amount
  * @returns {string}
  */
@@ -34,7 +148,7 @@ export function formatINRWords(amount) {
   const num = Math.round(amount);
   if (num >= 10000000) {
     const cr = (num / 10000000).toFixed(2).replace(/\.00$/, "");
-    return `(${cr} Cr)`;
+    return `(${cr} Crore)`;
   }
   if (num >= 100000) {
     const lk = (num / 100000).toFixed(2).replace(/\.00$/, "");
@@ -48,34 +162,76 @@ export function formatINRWords(amount) {
 }
 
 /**
- * Format an ISO date string (YYYY-MM-DD) into readable Indian date.
- * e.g. "2027-02-15" -> "15 Feb 2027"
- * @param {string} dateStr
+ * Format a financial difference with an explicit sign and direction wording.
+ * e.g. 42000 -> "₹42,000 more", -10000 -> "₹10,000 less"
+ * @param {number} diff
  * @returns {string}
  */
-export function formatDate(dateStr) {
+export function formatDiffINR(diff) {
+  const d = Math.round(diff);
+  if (d === 0) return "No difference";
+  const absFormatted = formatINR(Math.abs(d));
+  return d > 0 ? `${absFormatted} more` : `${absFormatted} less`;
+}
+
+/**
+ * Format an ISO date string (YYYY-MM-DD) into readable Indian date with Asia/Kolkata timezone context.
+ * e.g. "2027-02-15" -> "15 Feb 2027" (or "Mon, 15 Feb 2027" if includeWeekday=true)
+ * @param {string} dateStr
+ * @param {boolean} [includeWeekday=false]
+ * @returns {string}
+ */
+export function formatDate(dateStr, includeWeekday = false) {
   if (!dateStr) return "";
   try {
-    const parts = dateStr.split("-");
+    const parts = String(dateStr).split("-");
+    let d;
     if (parts.length === 3) {
-      const year = parseInt(parts[0], 10);
-      const month = parseInt(parts[1], 10) - 1;
-      const day = parseInt(parts[2], 10);
-      const d = new Date(year, month, day);
-      return new Intl.DateTimeFormat("en-IN", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      }).format(d);
+      d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    } else {
+      d = new Date(dateStr);
     }
-    const d = new Date(dateStr);
-    return new Intl.DateTimeFormat("en-IN", {
+    if (isNaN(d.getTime())) return String(dateStr);
+
+    const options = {
       day: "numeric",
       month: "short",
       year: "numeric",
-    }).format(d);
+      timeZone: "Asia/Kolkata",
+    };
+    if (includeWeekday) {
+      options.weekday = "short";
+    }
+    return new Intl.DateTimeFormat("en-IN", options).format(d);
   } catch {
-    return dateStr;
+    return String(dateStr);
+  }
+}
+
+/**
+ * Compute the calendar day difference and descriptive phrase for a target celebration date.
+ * Accurately handles today, tomorrow, yesterday, and future/past dates without off-by-one errors.
+ * @param {string} dateStr
+ * @returns {{ days: number, text: string }}
+ */
+export function getCountdownInfo(dateStr) {
+  if (!dateStr) return { days: 0, text: "" };
+  try {
+    const parts = String(dateStr).split("-");
+    if (parts.length !== 3) return { days: 0, text: "" };
+    const target = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const diffDays = Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return { days: 0, text: "Today is celebration day" };
+    if (diffDays === 1) return { days: 1, text: "1 day to go — tomorrow is the day!" };
+    if (diffDays > 1) return { days: diffDays, text: `${diffDays} days to go` };
+    if (diffDays === -1) return { days: -1, text: "Celebrated yesterday" };
+    const past = Math.abs(diffDays);
+    return { days: diffDays, text: `Celebrated ${past} days ago` };
+  } catch {
+    return { days: 0, text: "" };
   }
 }
 
