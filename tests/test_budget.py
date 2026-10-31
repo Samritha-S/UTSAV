@@ -63,8 +63,8 @@ def test_allocations_sum_exactly_to_budget(
     assert total_calculated == pytest.approx(event.budget_inr, abs=1e-4)
     # Check each allocation is a whole rupee amount
     for cat in breakdown.categories:
-        assert cat.allocated_inr.is_integer()
-    assert breakdown.contingency_inr.is_integer()
+        assert isinstance(cat.allocated_inr, int)
+    assert isinstance(breakdown.contingency_inr, int)
 
 
 def test_contingency_range_and_scaling():

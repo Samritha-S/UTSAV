@@ -1,3 +1,8 @@
+[project]
+name = "utsav-planner"
+version = "1.0.0"
+requires-python = ">=3.11"
+
 [tool.ruff]
 line-length = 100
 target-version = "py311"
