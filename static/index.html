@@ -9,267 +9,131 @@
 </head>
 <body>
   <!-- Accessible Skip Link -->
-  <a href="#main-content" class="skip-link">Skip to main content</a>
+  <a href="#app-root" class="skip-link">Skip to main content</a>
 
-  <!-- Application Header -->
+  <!-- Application Header & Top Navigation -->
   <header class="app-header">
     <div class="header-container">
       <div class="logo">
-        <span class="logo-symbol" aria-hidden="true">
-          <!-- Geometric Kolam Mark SVG -->
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="kolam-header-mark" aria-hidden="true">
-            <rect x="7" y="7" width="10" height="10" transform="rotate(45 12 12)" stroke="currentColor" stroke-width="1.5" fill="none"></rect>
-            <circle cx="12" cy="6" r="2.5" stroke="currentColor" stroke-width="1.2" fill="none"></circle>
-            <circle cx="18" cy="12" r="2.5" stroke="currentColor" stroke-width="1.2" fill="none"></circle>
-            <circle cx="12" cy="18" r="2.5" stroke="currentColor" stroke-width="1.2" fill="none"></circle>
-            <circle cx="6" cy="12" r="2.5" stroke="currentColor" stroke-width="1.2" fill="none"></circle>
-            <circle cx="12" cy="12" r="1.5" fill="currentColor"></circle>
-          </svg>
-        </span>
-        <div class="logo-text">
-          <h1>Utsav Planner</h1>
-          <p class="tagline">The Event Programme &amp; Planning Ledger</p>
-        </div>
+        <a href="#/" class="logo-link" aria-label="Utsav Planner Home">
+          <span class="logo-symbol" aria-hidden="true">
+            <!-- Geometric Kolam Mark SVG -->
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="kolam-header-mark" aria-hidden="true">
+              <rect x="7" y="7" width="10" height="10" transform="rotate(45 12 12)" stroke="currentColor" stroke-width="1.5" fill="none"></rect>
+              <circle cx="12" cy="6" r="2.5" stroke="currentColor" stroke-width="1.2" fill="none"></circle>
+              <circle cx="18" cy="12" r="2.5" stroke="currentColor" stroke-width="1.2" fill="none"></circle>
+              <circle cx="12" cy="18" r="2.5" stroke="currentColor" stroke-width="1.2" fill="none"></circle>
+              <circle cx="6" cy="12" r="2.5" stroke="currentColor" stroke-width="1.2" fill="none"></circle>
+              <circle cx="12" cy="12" r="1.5" fill="currentColor"></circle>
+            </svg>
+          </span>
+          <div class="logo-text">
+            <span class="site-title">Utsav Planner</span>
+            <span class="tagline">The Event Programme &amp; Planning Ledger</span>
+          </div>
+        </a>
       </div>
+
+      <!-- Main Navigation -->
+      <nav class="app-nav" aria-label="Primary Navigation">
+        <ul class="nav-list" role="list">
+          <li class="nav-item">
+            <a href="#/" class="nav-link" id="nav-home">Home</a>
+          </li>
+          <li class="nav-item">
+            <a href="#/plan" class="nav-link" id="nav-plan">Plan an Event</a>
+          </li>
+          <li class="nav-item">
+            <a href="#/events" class="nav-link" id="nav-events">My Events</a>
+          </li>
+        </ul>
+      </nav>
+
       <div class="header-meta-text">
         <span class="currency-tag">Indian Rupees (₹) · Asia/Kolkata</span>
       </div>
     </div>
   </header>
 
-  <!-- Main Content Landmark -->
-  <main id="main-content" class="main-container">
-    <!-- Editorial Lead Summary -->
-    <section class="editorial-intro-strip" aria-labelledby="intro-heading">
-      <h2 id="intro-heading" class="sr-only">About Utsav Planner</h2>
-      <p class="editorial-lead-sentence">
-        A mathematically verified budget ledger, backwards-scheduled milestone run-of-show, statutory compliance checklist, and culturally tailored creative ideas.
-      </p>
-    </section>
+  <!-- Screen Reader Route Announcer (aria-live region) -->
+  <div id="route-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
 
-    <!-- Global Error Banner -->
-    <div id="global-error" class="error-banner is-hidden" role="alert" aria-live="assertive"></div>
-
-    <!-- Guided 3-Step Intake Card -->
-    <section class="form-card" aria-labelledby="intake-card-heading">
-      <div class="form-card-header">
-        <div>
-          <h2 id="intake-card-heading" class="form-title">Event Intake &amp; Requirements</h2>
-          <p id="step-indicator" class="step-indicator" aria-live="polite">Step 1 of 3: What are you celebrating</p>
-        </div>
-        <button type="button" id="sample-plan-btn" class="btn btn-outline btn-sm" aria-label="Populate form with realistic demo values">
-          ⚡ Try a sample plan
-        </button>
-      </div>
-
-      <form id="intake-form" novalidate>
-        <!-- ========================================================= -->
-        <!-- STEP 1: What are you celebrating                          -->
-        <!-- ========================================================= -->
-        <div id="step-1-panel" class="intake-step">
-          <!-- Event Type -->
-          <fieldset class="form-fieldset">
-            <legend class="fieldset-legend">Event Type <span class="required" aria-hidden="true">*</span></legend>
-            <div class="radio-cards-grid">
-              <div class="radio-card">
-                <input type="radio" id="type-wedding" name="event_type" value="wedding" checked>
-                <label for="type-wedding" class="radio-card-label">
-                  <span class="radio-title">Wedding</span>
-                  <span class="radio-desc">Multi-day traditional celebration &amp; ceremonies</span>
-                </label>
-              </div>
-              <div class="radio-card">
-                <input type="radio" id="type-birthday" name="event_type" value="birthday">
-                <label for="type-birthday" class="radio-card-label">
-                  <span class="radio-title">Birthday</span>
-                  <span class="radio-desc">Milestone family celebration &amp; party</span>
-                </label>
-              </div>
-              <div class="radio-card">
-                <input type="radio" id="type-community" name="event_type" value="community">
-                <label for="type-community" class="radio-card-label">
-                  <span class="radio-title">Community</span>
-                  <span class="radio-desc">Festival, Utsav or residential society mela</span>
-                </label>
-              </div>
-            </div>
-          </fieldset>
-
-          <!-- Date and City in Step 1 -->
-          <div class="form-row form-row-2">
-            <!-- Event Date -->
-            <div class="form-group">
-              <label for="event-date" class="form-label">Event Date <span class="required" aria-hidden="true">*</span></label>
-              <input type="date" id="event-date" name="event_date" required aria-describedby="date-help date-error" class="form-input">
-              <span id="date-help" class="field-hint">Must be today or a future date</span>
-              <span id="date-error" class="field-error is-hidden" role="alert" aria-live="polite"></span>
-            </div>
-
-            <!-- City / Region -->
-            <div class="form-group">
-              <label for="city" class="form-label">City / Region <span class="required" aria-hidden="true">*</span></label>
-              <input type="text" id="city" name="city" value="Jaipur" maxlength="50" required placeholder="e.g. Jaipur, Pune, Bengaluru" aria-describedby="city-help city-error" class="form-input">
-              <span id="city-help" class="field-hint">City where vendor services are booked</span>
-              <span id="city-error" class="field-error is-hidden" role="alert" aria-live="polite"></span>
-            </div>
-          </div>
-
-          <!-- Step 1 Actions -->
-          <div class="step-nav-actions">
-            <span></span>
-            <button type="button" id="step-1-next-btn" class="btn btn-primary">
-              Next: Guests &amp; Budget &rarr;
-            </button>
-          </div>
-        </div>
-
-        <!-- ========================================================= -->
-        <!-- STEP 2: The guests and the money                          -->
-        <!-- ========================================================= -->
-        <div id="step-2-panel" class="intake-step is-hidden">
-          <div class="form-row form-row-2">
-            <!-- Guest Count -->
-            <div class="form-group">
-              <label for="guest-count" class="form-label">Expected Guest Count <span class="required" aria-hidden="true">*</span></label>
-              <input type="number" id="guest-count" name="guest_count" min="10" max="5000" step="1" value="200" required aria-describedby="guest-help guest-error" class="form-input">
-              <span id="guest-help" class="field-hint">10 to 5,000 attendees</span>
-              <span id="guest-error" class="field-error is-hidden" role="alert" aria-live="polite"></span>
-            </div>
-
-            <!-- Total Budget INR -->
-            <div class="form-group">
-              <label for="budget-inr" class="form-label">Total Allocated Budget (INR) <span class="required" aria-hidden="true">*</span></label>
-              <input type="number" id="budget-inr" name="budget_inr" min="10000" max="100000000" step="1000" value="1500000" required aria-describedby="budget-preview budget-help budget-error" class="form-input">
-              <div id="budget-preview" class="budget-reaction-box" aria-live="polite">₹15,00,000 (15 Lakh) — about ₹7,500 per guest</div>
-              <span id="budget-help" class="field-hint">₹10,000 to ₹10,00,00,000 (10 Crore)</span>
-              <span id="budget-error" class="field-error is-hidden" role="alert" aria-live="polite"></span>
-            </div>
-          </div>
-
-          <!-- City Tier with One-Line Guidance -->
-          <div class="form-group">
-            <label for="city-tier" class="form-label">City Cost Tier <span class="required" aria-hidden="true">*</span></label>
-            <select id="city-tier" name="city_tier" aria-describedby="tier-help tier-error" class="form-select">
-              <option value="metro">Metro — Delhi NCR, Mumbai, Bengaluru, Hyderabad, Chennai, Kolkata, Pune (highest venue &amp; catering baselines)</option>
-              <option value="tier2" selected>Tier 2 — Jaipur, Lucknow, Chandigarh, Pune, Kochi, Ahmedabad (balanced regional vendor rates)</option>
-              <option value="tier3">Tier 3 — Smaller district headquarters and towns (cost-effective local sourcing)</option>
-            </select>
-            <span id="tier-help" class="field-hint">Scales realistic category benchmarks to local market economics</span>
-            <span id="tier-error" class="field-error is-hidden" role="alert" aria-live="polite"></span>
-          </div>
-
-          <!-- Step 2 Actions -->
-          <div class="step-nav-actions">
-            <button type="button" id="step-2-back-btn" class="btn btn-outline">
-              &larr; Back
-            </button>
-            <button type="button" id="step-2-next-btn" class="btn btn-primary">
-              Next: Preferences &rarr;
-            </button>
-          </div>
-        </div>
-
-        <!-- ========================================================= -->
-        <!-- STEP 3: Preferences & details                             -->
-        <!-- ========================================================= -->
-        <div id="step-3-panel" class="intake-step is-hidden">
-          <!-- Venue Setting -->
-          <div class="form-group">
-            <label for="venue-setting" class="form-label">Venue Setting <span class="required" aria-hidden="true">*</span></label>
-            <select id="venue-setting" name="venue_setting" aria-describedby="venue-help venue-error" class="form-select">
-              <option value="indoor" selected>Indoor (Banquet hall, hotel ballroom, auditorium)</option>
-              <option value="outdoor">Outdoor (Lawn, open ground, courtyard — activates generator &amp; weather checks)</option>
-              <option value="both">Both (Indoor banquet hall with adjoining outdoor lawn)</option>
-            </select>
-            <span id="venue-help" class="field-hint">Adapts sound permit, rainproofing, and power infrastructure diligence</span>
-            <span id="venue-error" class="field-error is-hidden" role="alert" aria-live="polite"></span>
-          </div>
-
-          <!-- Dietary Preferences -->
-          <fieldset class="form-fieldset">
-            <legend class="fieldset-legend">Dietary Preferences</legend>
-            <div class="checkboxes-grid">
-              <div class="checkbox-item">
-                <input type="checkbox" id="diet-veg" name="dietary" value="vegetarian" checked>
-                <label for="diet-veg" class="checkbox-box-label">Vegetarian (No meat or fish)</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="diet-jain" name="dietary" value="jain">
-                <label for="diet-jain" class="checkbox-box-label">Jain (No root vegetables, onions, garlic)</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="diet-vegan" name="dietary" value="vegan">
-                <label for="diet-vegan" class="checkbox-box-label">Vegan (100% plant-based, no dairy or ghee)</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="diet-halal" name="dietary" value="halal">
-                <label for="diet-halal" class="checkbox-box-label">Halal (Certified meat preparation)</label>
-              </div>
-            </div>
-          </fieldset>
-
-          <!-- Birthday Age Group (Disclosed only for birthdays) -->
-          <div id="age-group-container" class="form-group is-hidden">
-            <label for="age-group" class="form-label">Target Age Demographic (Birthday)</label>
-            <select id="age-group" name="age_group" aria-describedby="age-help age-error" class="form-select">
-              <option value="">Select age group (optional)</option>
-              <option value="kids">Kids (0–12 years) — activates carnival games &amp; kid-safe menus</option>
-              <option value="teens">Teens (13–19 years) — activates interactive music &amp; mocktail counters</option>
-              <option value="adults">Adults (20–59 years) — activates formal dining &amp; cocktail lounges</option>
-              <option value="seniors">Seniors (60+ years) — activates seating comfort &amp; ghazal recitals</option>
-            </select>
-            <span id="age-help" class="field-hint">Tailors entertainment choices and activity pacing</span>
-            <span id="age-error" class="field-error is-hidden" role="alert" aria-live="polite"></span>
-          </div>
-
-          <!-- Theme Notes -->
-          <div class="form-group">
-            <label for="theme-notes" class="form-label">Theme Concept &amp; Special Wishes (Optional)</label>
-            <textarea id="theme-notes" name="theme_notes" maxlength="400" rows="3" placeholder="e.g. Traditional Marwar aesthetic with marigold floral decor, live classical sitar recital, authentic regional sweets..." aria-describedby="notes-counter notes-error" class="form-textarea"></textarea>
-            <div class="field-footer">
-              <span id="notes-counter" class="char-counter">0 / 400</span>
-              <span id="notes-error" class="field-error is-hidden" role="alert" aria-live="polite"></span>
-            </div>
-          </div>
-
-          <!-- Step 3 Actions: Back and Submit -->
-          <div class="step-nav-actions">
-            <button type="button" id="step-3-back-btn" class="btn btn-outline">
-              &larr; Back
-            </button>
-            <button type="submit" id="submit-plan-btn" class="btn btn-primary btn-lg">
-              Generate Event Plan
-            </button>
-          </div>
-        </div>
-
-        <!-- Honest Text-Based Progress Loading State -->
-        <div id="loading-indicator" class="loading-state is-hidden" aria-live="polite" aria-atomic="true">
-          <div class="loading-ornament" aria-hidden="true">
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" class="kolam-spinner" aria-hidden="true">
-              <rect x="10" y="10" width="12" height="12" stroke="currentColor" stroke-width="1.25" fill="none"></rect>
-              <rect x="10" y="10" width="12" height="12" transform="rotate(45 16 16)" stroke="currentColor" stroke-width="1.25" fill="none"></rect>
-              <circle cx="16" cy="16" r="2" fill="currentColor"></circle>
-              <circle cx="16" cy="4" r="1.2" fill="currentColor"></circle>
-              <circle cx="28" cy="16" r="1.2" fill="currentColor"></circle>
-              <circle cx="16" cy="28" r="1.2" fill="currentColor"></circle>
-              <circle cx="4" cy="16" r="1.2" fill="currentColor"></circle>
-            </svg>
-          </div>
-          <p id="loading-stage-text" class="loading-stage-text">Working out your budget allocations...</p>
-          <p class="loading-notice-text">Generative AI ideas require about 8–15 seconds to formulate.</p>
-          <div class="loading-skeleton-lines" aria-hidden="true">
-            <div class="skeleton-line skeleton-long"></div>
-            <div class="skeleton-line skeleton-medium"></div>
-            <div class="skeleton-line skeleton-short"></div>
-          </div>
-        </div>
-      </form>
-    </section>
-
-    <!-- Results Programme Section -->
-    <div id="results-container" class="results-container is-hidden"></div>
+  <!-- Dynamic Application Mount Container -->
+  <main id="app-root" class="main-container" tabindex="-1">
+    <!-- View modules mount dynamically here via HashRouter -->
   </main>
+
+  <!-- Static Blueprint Template for Form Controls & Accessibility -->
+  <template id="tmpl-intake-form">
+    <div class="form-blueprint-scaffold">
+      <fieldset>
+        <legend>Event Type</legend>
+        <input type="radio" id="type-wedding" name="event_type_bp" value="wedding">
+        <label for="type-wedding">Wedding</label>
+        <input type="radio" id="type-birthday" name="event_type_bp" value="birthday">
+        <label for="type-birthday">Birthday</label>
+        <input type="radio" id="type-community" name="event_type_bp" value="community">
+        <label for="type-community">Community</label>
+      </fieldset>
+
+      <label for="event-date">Event Date</label>
+      <input type="date" id="event-date" name="event_date_bp">
+
+      <label for="city">City / Region</label>
+      <input type="text" id="city" name="city_bp">
+
+      <label for="guest-count">Expected Guest Count</label>
+      <input type="number" id="guest-count" name="guest_count_bp">
+
+      <label for="budget-inr">Total Allocated Budget (INR)</label>
+      <input type="number" id="budget-inr" name="budget_inr_bp">
+
+      <label for="city-tier">City Cost Tier</label>
+      <select id="city-tier" name="city_tier_bp">
+        <option value="metro">Metro</option>
+        <option value="tier2">Tier 2</option>
+        <option value="tier3">Tier 3</option>
+      </select>
+
+      <label for="venue-setting">Venue Setting</label>
+      <select id="venue-setting" name="venue_setting_bp">
+        <option value="indoor">Indoor</option>
+        <option value="outdoor">Outdoor</option>
+        <option value="both">Both</option>
+      </select>
+
+      <fieldset>
+        <legend>Dietary Requirements</legend>
+        <input type="checkbox" id="diet-veg" name="dietary_bp" value="vegetarian">
+        <label for="diet-veg">Vegetarian</label>
+        <input type="checkbox" id="diet-jain" name="dietary_bp" value="jain">
+        <label for="diet-jain">Jain</label>
+        <input type="checkbox" id="diet-vegan" name="dietary_bp" value="vegan">
+        <label for="diet-vegan">Vegan</label>
+        <input type="checkbox" id="diet-halal" name="dietary_bp" value="halal">
+        <label for="diet-halal">Halal</label>
+      </fieldset>
+
+      <label for="age-group">Target Demographic (Birthday)</label>
+      <select id="age-group" name="age_group_bp">
+        <option value="">All</option>
+        <option value="kids">Kids</option>
+        <option value="teens">Teens</option>
+        <option value="adults">Adults</option>
+        <option value="seniors">Seniors</option>
+      </select>
+
+      <label for="theme-notes">Theme Concept &amp; Special Wishes</label>
+      <textarea id="theme-notes" name="theme_notes_bp" rows="3"></textarea>
+
+      <!-- Live Demo Controls -->
+      <label for="demo-guest-slider">Demo Guest Slider</label>
+      <input type="range" id="demo-guest-slider" name="demo_guests_bp">
+
+      <label for="demo-budget-input">Demo Budget Input</label>
+      <input type="number" id="demo-budget-input" name="demo_budget_bp">
+    </div>
+  </template>
 
   <!-- Application Footer -->
   <footer class="app-footer">
