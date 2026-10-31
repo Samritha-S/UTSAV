@@ -199,3 +199,66 @@ def test_css_contains_no_purple_range_hues():
         assert not is_purple, (
             f"Forbidden purple/violet hue found in styles.css: {hex_val} (hue={hue:.1f}°, sat={sat:.2f}, light={light:.2f})"
         )
+
+
+# ---------------------------------------------------------------------
+# 7. Design Direction: No Gradients, Minimal Radii, No Badges/Pills
+# ---------------------------------------------------------------------
+def test_css_contains_no_gradients():
+    """Verify styles.css contains no linear, radial, or conic gradient functions."""
+    css_path = STATIC_DIR / "styles.css"
+    css_content = css_path.read_text(encoding="utf-8")
+    assert "gradient(" not in css_content.lower(), "Found forbidden gradient in styles.css"
+
+
+def test_css_border_radius_limits():
+    """Verify styles.css border-radius declarations never exceed 4px (except 50% for circles)."""
+    css_path = STATIC_DIR / "styles.css"
+    css_content = css_path.read_text(encoding="utf-8")
+
+    # Check custom properties
+    custom_props = re.findall(r"--radius-[a-z]+:\s*([^;]+);", css_content)
+    for prop_val in custom_props:
+        val_clean = prop_val.strip()
+        if val_clean.endswith("px"):
+            px = float(val_clean.replace("px", ""))
+            assert px <= 4.0, f"Custom property border-radius exceeds 4px: {val_clean}"
+
+    # Check inline border-radius declarations
+    radius_decls = re.findall(r"border(?:-[a-z]+)*-radius\s*:\s*([^;]+);", css_content)
+    for decl in radius_decls:
+        decl_clean = decl.strip()
+        # Allow variables or 50%
+        if decl_clean.startswith("var(") or decl_clean == "50%":
+            continue
+        if decl_clean.endswith("px"):
+            px = float(decl_clean.replace("px", ""))
+            assert px <= 4.0, f"border-radius exceeds 4px limit: {decl_clean}"
+
+
+def test_js_contains_no_badge_or_pill_class_names():
+    """Verify no JS file applies or contains class names matching 'badge' or 'pill'."""
+    all_js_files = list(STATIC_DIR.glob("**/*.js"))
+
+    # Regex matching class assignments or strings with badge or pill as class name
+    class_pattern = re.compile(
+        r"""(?:\bclass(?:Name)?\s*[:=]\s*["'][^"']*\b(badge|pill)\b[^"']*["'])|(?:["'][^"']*\b(badge|pill)\b[^"']*["'])""",
+        re.IGNORECASE,
+    )
+
+    for js_path in all_js_files:
+        code = js_path.read_text(encoding="utf-8")
+        for idx, line in enumerate(code.splitlines(), 1):
+            line_strip = line.strip()
+            # Ignore comments
+            if (
+                line_strip.startswith("//")
+                or line_strip.startswith("*")
+                or line_strip.startswith("/*")
+            ):
+                continue
+            # Check for badge or pill in active code
+            match = class_pattern.search(line_strip)
+            assert match is None, (
+                f"Forbidden badge/pill class name found in {js_path.name}:{idx} -> {line_strip}"
+            )

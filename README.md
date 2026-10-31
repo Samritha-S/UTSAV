@@ -46,6 +46,12 @@ Generic planning applications fail because they either force rigid generic templ
   - Tailors advice for large gatherings (>500 guests: ambulance on standby, queue stanchions, municipal trash clearance).
   - Reminds organizers to verify local loudspeaker cutoff rules and food safety certifications with local authorities.
 
+- **"The Printed Programme" Editorial Design System**:
+  - Typeset like an elegant invitation booklet and traditional shopkeeper's ledger on warm paper (`#FBF7EF`) with near-black ink (`#1F1B16`), deep forest green (`#1F5B45`), marigold (`#E0A100`), and vermilion (`#B3261E`) for urgent milestones.
+  - Zero gradients, zero pill/badge capsules, sharp/2px editorial corners, and authentic geometric Kolam/Rangoli vector motifs.
+  - Guided 3-step intake flow with live Indian currency groupings, per-guest spending reactions, and one-line tier explanations.
+  - Honest text-based loading stages cycling through real calculation steps without fake spinner illusions.
+
 - **Personalized Creative Ideas (Gemini 2.5 Flash)**:
   - Generates exactly 3 distinct celebratory themes, color palettes, stage layouts, interactive cultural icebreakers, and course-by-course menus respecting dietary preferences (Pure Vegetarian, Jain, Halal, Eggetarian, Non-Vegetarian).
   - Tuned for low latency by disabling generative reasoning tokens (`thinking_budget=0` in `ThinkingConfig`), slashing response latency from ~15s to ~8s while preserving rich cultural nuance.
@@ -53,12 +59,12 @@ Generic planning applications fail because they either force rigid generic templ
   - Zero-exception graceful fallback: If the API key is missing, invalid, or times out (30s window), curated regional fallbacks render instantly with a clear fallback indicator.
 
 - **Interactive In-Browser Refinement**:
-  - Allows organizers to refine creative ideas dynamically (e.g., *"Make it eco-friendly with marigold and banana leaf decor"* or *"Focus on South Indian breakfast delicacies"*).
+  - Allows organizers to refine creative ideas dynamically via plain suggestion links (e.g., *"Make it eco-friendly with marigold and banana leaf decor"* or *"Focus on South Indian breakfast delicacies"*).
   - Enforces client-side and server-side rate limits (max 5 refinements per session, 10 AI requests/minute, 60 general requests/minute).
 
-- **Offline-First Persistence**:
-  - Automatically saves the complete event plan and checklist completion states to browser `localStorage`.
-  - Includes a quick-print stylesheet (`window.print()`) that formats clean vendor briefings and run-sheets without navigation clutter.
+- **Offline-First Persistence & Print Programme**:
+  - Automatically saves the complete event plan and checklist completion states to browser `localStorage` (versioned `utsav_v2` schema).
+  - Includes a publication-grade print stylesheet (`window.print()`) that typesets the entire plan as a clean, multi-page programme with page-break controls and zero navigation clutter.
 
 ---
 
@@ -198,10 +204,15 @@ utsav-planner/
 │   ├── app.js                   # Application bootstrap & coordinator
 │   └── js/
 │       ├── api.js               # Typed fetch client with error handling
-│       ├── render.js            # DOM builders using safe textContent/createElement
+│       ├── render.js            # DOM coordinator assembling modular section renderers
+│       ├── render_budget.js     # Shopkeeper's ledger with dotted leaders and proportional bars
+│       ├── render_checklist.js  # Grouped checklist with native progress and filter
+│       ├── render_common.js     # Programme summary at a glance, tablist, and actions
+│       ├── render_ideas.js      # Editorial themes, authentic menu card & refinement
+│       ├── render_timeline.js   # Vertical run-of-show with date margins and advice
 │       ├── state.js             # Client state management & reactive subscriptions
-│       ├── storage.js           # LocalStorage persistence & restoration
-│       └── utils.js             # INR formatting (Lakhs/Crores), date helpers, sanitization
+│       ├── storage.js           # LocalStorage persistence & restoration (schema v2)
+│       └── utils.js             # INR formatting, Kolam SVG generator, date helpers
 ├── tests/
 │   ├── __init__.py
 │   ├── test_api.py              # API endpoint integration, rate limiting & error handling tests
