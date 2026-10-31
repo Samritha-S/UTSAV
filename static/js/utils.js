@@ -134,9 +134,161 @@ export function h(tag, props = {}, ...children) {
   return el;
 }
 
+const SVG_NS = "http://www.w3.org/2000/svg";
+
 /**
- * Pre-configured realistic sample presets for instant demoing.
+ * Safe SVG element factory function.
+ * @param {string} tag
+ * @param {Object} [props]
+ * @param {...(Node|string|number)} children
+ * @returns {SVGElement}
  */
+export function svg(tag, props = {}, ...children) {
+  const el = document.createElementNS(SVG_NS, tag);
+  if (props) {
+    for (const [key, val] of Object.entries(props)) {
+      if (val !== null && val !== undefined) {
+        el.setAttribute(key, String(val));
+      }
+    }
+  }
+  children.forEach((child) => {
+    if (child instanceof Node) {
+      el.appendChild(child);
+    } else if (child !== null && child !== undefined) {
+      el.appendChild(document.createTextNode(String(child)));
+    }
+  });
+  return el;
+}
+
+/**
+ * Generate a small, authentic geometric Kolam / Rangoli-style dot-and-line SVG motif.
+ * Uses currentColor so it inherits text color seamlessly.
+ *
+ * @param {"mark"|"divider"|"spinner"} variant
+ * @param {number} [width]
+ * @param {number} [height]
+ * @returns {SVGSVGElement}
+ */
+export function createKolamMotif(variant = "mark", width = 24, height = 24) {
+  if (variant === "divider") {
+    // Elegant horizontal dot-and-line ornamental section divider
+    const el = svg(
+      "svg",
+      {
+        width: width || 64,
+        height: height || 16,
+        viewBox: "0 0 64 16",
+        fill: "none",
+        class: "kolam-divider",
+        "aria-hidden": "true",
+      },
+      // Center flower/diamond
+      svg("path", {
+        d: "M32 2 L36 8 L32 14 L28 8 Z",
+        fill: "none",
+        stroke: "currentColor",
+        "stroke-width": "1.25",
+      }),
+      // Center dot
+      svg("circle", { cx: "32", cy: "8", r: "1.2", fill: "currentColor" }),
+      // Flanking horizontal lines and accent dots
+      svg("line", { x1: "4", y1: "8", x2: "24", y2: "8", stroke: "currentColor", "stroke-width": "1" }),
+      svg("circle", { cx: "14", cy: "8", r: "1", fill: "currentColor" }),
+      svg("line", { x1: "40", y1: "8", x2: "60", y2: "8", stroke: "currentColor", "stroke-width": "1" }),
+      svg("circle", { cx: "50", cy: "8", r: "1", fill: "currentColor" })
+    );
+    return el;
+  }
+
+  if (variant === "spinner") {
+    // Symmetrical 8-point geometric Kolam for loading state
+    const el = svg(
+      "svg",
+      {
+        width: width || 32,
+        height: height || 32,
+        viewBox: "0 0 32 32",
+        fill: "none",
+        class: "kolam-spinner",
+        "aria-hidden": "true",
+      },
+      // Central concentric petals
+      svg("rect", {
+        x: "10",
+        y: "10",
+        width: "12",
+        height: "12",
+        stroke: "currentColor",
+        "stroke-width": "1.25",
+        fill: "none",
+      }),
+      svg("rect", {
+        x: "10",
+        y: "10",
+        width: "12",
+        height: "12",
+        transform: "rotate(45 16 16)",
+        stroke: "currentColor",
+        "stroke-width": "1.25",
+        fill: "none",
+      }),
+      svg("circle", { cx: "16", cy: "16", r: "2", fill: "currentColor" }),
+      // Cardinal dots
+      svg("circle", { cx: "16", cy: "4", r: "1.2", fill: "currentColor" }),
+      svg("circle", { cx: "28", cy: "16", r: "1.2", fill: "currentColor" }),
+      svg("circle", { cx: "16", cy: "28", r: "1.2", fill: "currentColor" }),
+      svg("circle", { cx: "4", cy: "16", r: "1.2", fill: "currentColor" })
+    );
+    return el;
+  }
+
+  // Default "mark": Symmetrical 4-petal traditional kolam logomark
+  const el = svg(
+    "svg",
+    {
+      width: width || 24,
+      height: height || 24,
+      viewBox: "0 0 24 24",
+      fill: "none",
+      class: "kolam-mark",
+      "aria-hidden": "true",
+    },
+    // Square rotated 45 deg
+    svg("rect", {
+      x: "7",
+      y: "7",
+      width: "10",
+      height: "10",
+      transform: "rotate(45 12 12)",
+      stroke: "currentColor",
+      "stroke-width": "1.5",
+      fill: "none",
+    }),
+    // 4 cardinal loop petals
+    svg("circle", { cx: "12", cy: "6", r: "2.5", stroke: "currentColor", "stroke-width": "1.2", fill: "none" }),
+    svg("circle", { cx: "18", cy: "12", r: "2.5", stroke: "currentColor", "stroke-width": "1.2", fill: "none" }),
+    svg("circle", { cx: "12", cy: "18", r: "2.5", stroke: "currentColor", "stroke-width": "1.2", fill: "none" }),
+    svg("circle", { cx: "6", cy: "12", r: "2.5", stroke: "currentColor", "stroke-width": "1.2", fill: "none" }),
+    // Central bindu dot
+    svg("circle", { cx: "12", cy: "12", r: "1.5", fill: "currentColor" })
+  );
+  return el;
+}
+
+/**
+ * Format per-guest live reaction string.
+ * @param {number} budget
+ * @param {number} guests
+ * @returns {string} e.g. "about ₹7,500 per guest"
+ */
+export function formatPerGuestReaction(budget, guests) {
+  if (!budget || !guests || guests <= 0 || budget <= 0) return "";
+  const perGuest = Math.round(budget / guests);
+  return `about ${formatINR(perGuest)} per guest`;
+}
+
 export const SAMPLE_PRESETS = {
   wedding: {
     event_type: "wedding",

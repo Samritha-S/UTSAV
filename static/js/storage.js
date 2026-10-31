@@ -11,7 +11,7 @@
  */
 
 export const STORAGE_KEY = "utsav_planner_state";
-export const SCHEMA_VERSION = "utsav_v1";
+export const SCHEMA_VERSION = "utsav_v2";
 
 /**
  * Save application state to localStorage.
