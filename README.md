@@ -558,8 +558,32 @@ python -m pytest -v
   - Gemini API generation, prompt injection defense, dietary filtering, and server-controlled source tag validation.
 - **`test_api.py` (16 tests)**:
   - Plan generation, rate limiting (429), payload limits (413), content-type verification (415), and security headers.
+- **`test_text_sanitizer.py` (7 tests)**:
+  - Markdown syntax stripping (bold asterisks, italics, code fences, headers, list bullets).
+  - ALL-CAPS shouting normalization to title/sentence casing.
+  - Multi-dish comma/newline/conjunction splitting into clean standalone items.
+- **`test_formatting_and_labels.py` (5 tests)**:
+  - Complete coverage of all backend enums (`EventType`, `CityTier`, `VenueSetting`, `AgeGroup`, etc.) in frontend human-readable label tables.
+  - Verification of zero raw HTML arrow entities (`&rarr;`, `&larr;`, `&darr;`) in static files.
+  - Enforcement of zero `innerHTML`, `outerHTML`, or `eval` across all views.
 - **`test_smoke.py` (5 tests)**:
   - Health check endpoint verification, index.html delivery, and Pydantic schema validation.
+
+### Formatting, Typography & Design Scales
+
+- **Harmonious Token Scales**:
+  - **Type Scale**: `--font-size-xs` (12px) to `--font-size-3xl` (40px) rooted in a consistent typographic hierarchy.
+  - **Spacing Scale**: 8-point geometric scale (`--space-1` [4px] through `--space-8` [64px]).
+  - **Tabular Numerals**: `font-variant-numeric: tabular-nums` applied across all rupee allocations, ledgers, countdown counters, and dates to ensure vertical alignment.
+- **Indian Numbering System**:
+  - Currency formatters strictly respect Indian grouping (`₹15,00,000`, `₹15 lakh`, `₹2.5 crore`).
+  - Dates formatted in standard Indian context (`Asia/Kolkata` calendar reference).
+- **Responsive & Accessibility Standards**:
+  - Responsive layouts audited and verified across 7 viewports (320px, 360px, 390px, 768px, 1024px, 1280px, 1920px) with zero horizontal overflow.
+  - 16px minimum font size on form controls preventing unwanted iOS Safari auto-zoom.
+  - Accessible touch targets (minimum 44x44px) across all interactive buttons and navigation links.
+  - Contrast ratios meet or exceed WCAG AA (>5.2:1 against paper background `#FBF7EF` and white `#FFFFFF`).
+  - Print & PDF stylesheets configured for clean A4 and Letter pagination with page breaks per programme section.
 
 ---
 
