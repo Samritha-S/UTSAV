@@ -1,4 +1,4 @@
-"""Unit tests for pure text normalization and dish list splitting."""
+"""Unit tests for pure text normalization, acronym preservation, and dish list splitting."""
 
 from app.ai.text_cleaner import clean_model_text, split_and_clean_dishes
 
@@ -64,3 +64,44 @@ def test_clean_model_text_handles_empty_and_whitespace():
     assert clean_model_text("") == ""
     assert clean_model_text("   ") == ""
     assert clean_model_text(None) == ""
+
+
+def test_acronym_safety_and_preservation():
+    """Verify that acronyms up to 5 letters are preserved while longer all-caps words are normalised."""
+    # Specific inputs requested in user instructions
+    assert clean_model_text("DJ night with LED lighting") == "DJ night with LED lighting"
+    assert clean_model_text("FSSAI licensed caterer") == "FSSAI licensed caterer"
+    assert clean_model_text("AC hall") == "AC hall"
+    assert clean_model_text("RWA approval") == "RWA approval"
+    assert clean_model_text("DIY marigold garlands") == "DIY marigold garlands"
+    assert clean_model_text("BBQ & DJ") == "BBQ & DJ"
+    assert clean_model_text("BBQ & DJ", is_title_or_item=True) == "BBQ & DJ"
+
+    # Genuine all-caps shouting normalized
+    assert clean_model_text("THE ROYAL BALL", is_title_or_item=True) == "The Royal Ball"
+    assert clean_model_text("THE ROYAL BALL", is_title_or_item=False) == "The royal ball"
+
+    # Longer all-caps words in sentences normalized, acronyms preserved
+    mixed = clean_model_text(
+        "Enjoy our UNLIMITED buffet and EXTRAVAGANZA with BBQ & DJ",
+        is_title_or_item=False,
+    )
+    assert mixed == "Enjoy our unlimited buffet and extravaganza with BBQ & DJ"
+
+    leading = clean_model_text("UNLIMITED food and drinks with live DJ", is_title_or_item=False)
+    assert leading == "Unlimited food and drinks with live DJ"
+
+
+def test_split_and_clean_dishes_with_acronyms():
+    """Verify dish splitting preserves acronyms and handles both lists and strings."""
+    dishes = split_and_clean_dishes(
+        "Smoked BBQ Paneer Tikka, FSSAI certified Dal Makhani, DIY Chaat Station"
+    )
+    assert dishes == [
+        "Smoked BBQ Paneer Tikka",
+        "FSSAI certified Dal Makhani",
+        "DIY Chaat Station",
+    ]
+
+    single = split_and_clean_dishes("BBQ & DJ")
+    assert single == ["BBQ & DJ"]

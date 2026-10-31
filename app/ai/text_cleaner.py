@@ -3,9 +3,66 @@
 Ensures generated celebratory themes, dishes, activities, and notes contain zero
 markdown artifacts (bold, italics, list markers, code fences, headings), zero
 doubled punctuation, clean sentence casing, and clean list splitting.
+Preserves acronyms of up to 5 letters (e.g. DJ, LED, AC, FSSAI, RWA, DIY, BBQ),
+while normalizing longer all-caps shouting words in sentences.
 """
 
 import re
+
+# Comprehensive catalog of common celebratory, operational, statutory, and tech acronyms
+COMMON_ACRONYMS = {
+    "DJ",
+    "LED",
+    "AC",
+    "FSSAI",
+    "RWA",
+    "DIY",
+    "BBQ",
+    "VIP",
+    "VVIP",
+    "MC",
+    "AV",
+    "BGM",
+    "CCTV",
+    "GST",
+    "EPF",
+    "ESI",
+    "NOC",
+    "NDMC",
+    "MCD",
+    "BMC",
+    "SDM",
+    "IOA",
+    "OTP",
+    "URL",
+    "API",
+    "PDF",
+    "SMS",
+    "FAQ",
+    "RO",
+    "WIFI",
+    "WI-FI",
+}
+
+# Small stop-words that are commonly capitalized in full-shouting phrases
+COMMON_STOPWORDS = {
+    "THE",
+    "AND",
+    "FOR",
+    "WITH",
+    "FROM",
+    "THAT",
+    "THIS",
+    "WHAT",
+    "HAVE",
+    "WILL",
+    "YOUR",
+    "OUR",
+    "ALL",
+    "ARE",
+    "NOT",
+    "BUT",
+}
 
 
 def clean_model_text(text: str, is_title_or_item: bool = False) -> str:
@@ -68,21 +125,49 @@ def clean_model_text(text: str, is_title_or_item: bool = False) -> str:
     s = re.sub(r"!!+", "!", s)
     s = re.sub(r"(?<!\.)\.\.(?!\.)", ".", s)
 
-    # 11. Normalize ALL-CAPS shouting
-    # If the string is mostly uppercase and longer than 3 characters, normalize it
-    if len(s) > 3 and sum(1 for c in s if c.isupper()) > len(s) * 0.65:
-        if is_title_or_item:
-            s = s.title()
-        else:
-            # Sentence case: capitalize first letter of sentences
-            s = s.capitalize()
+    # 11. Acronym-safe ALL-CAPS normalization:
+    # Preserves acronyms of up to 5 letters (e.g. DJ, LED, AC, FSSAI, RWA, DIY, BBQ),
+    # while normalizing longer all-caps words (> 5 chars) in sentences,
+    # and converting genuine all-caps shouting into title/sentence case.
+    alpha_chars = [c for c in s if c.isalpha()]
+    is_full_shouting = len(alpha_chars) > 3 and all(c.isupper() for c in alpha_chars)
+
+    def _replace_caps_word(match: re.Match) -> str:
+        w = match.group(0)
+        upper_w = w.upper()
+
+        # Recognized acronyms are always preserved
+        if upper_w in COMMON_ACRONYMS:
+            return upper_w
+
+        if w.isupper():
+            if is_full_shouting:
+                # In full shouting phrase, normalize all non-acronym words
+                return w.capitalize() if is_title_or_item else w.lower()
+
+            # In mixed sentences:
+            # Longer all-caps words (> 5 chars) must be normalized
+            if len(w) > 5:
+                return w.capitalize() if is_title_or_item else w.lower()
+
+            # Short all-caps stop-words in mixed sentences
+            if upper_w in COMMON_STOPWORDS:
+                return w.capitalize() if is_title_or_item else w.lower()
+
+            # Other short all-caps words (<= 5 chars) are preserved as acronyms
+            return w
+
+        return w
+
+    s = re.sub(r"\b[A-Za-z]+\b", _replace_caps_word, s)
 
     # 12. If title or single item: remove trailing colons, semicolons, dashes, or exclamation marks
     if is_title_or_item:
         s = re.sub(r"[\s:;\-!]+$", "", s)
-        # Ensure first character is uppercase
-        if s and s[0].islower():
-            s = s[0].upper() + s[1:]
+
+    # Ensure first character of sentence/title is capitalized
+    if s and s[0].islower():
+        s = s[0].upper() + s[1:]
 
     return s.strip()
 

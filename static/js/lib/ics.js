@@ -168,16 +168,18 @@ export function generateICS(eventId, eventTitle, tasks, dtstampDate = new Date()
 
   if (Array.isArray(tasks)) {
     for (const task of tasks) {
-      if (!task || !task.due_date) continue;
+      const taskDate = task.target_date || task.due_date || task.deadline_date;
+      if (!task || !taskDate) continue;
 
       const uid = `utsav-${eventId || "plan"}-${task.task_id || Math.random().toString(36).slice(2)}@utsavplanner`;
-      const dtstart = toIcsDate(task.due_date);
-      const dtend = computeNextDayIcsDate(task.due_date);
+      const dtstart = toIcsDate(taskDate);
+      const dtend = computeNextDayIcsDate(taskDate);
       const summary = task.title ? escapeIcsText(task.title) : "Planning Milestone";
 
       const descParts = [];
-      if (task.description) {
-        descParts.push(task.description);
+      const guidance = task.advice || task.description;
+      if (guidance) {
+        descParts.push(guidance);
       }
       if (task.priority) {
         descParts.push(`Priority: ${task.priority.toUpperCase()}`);

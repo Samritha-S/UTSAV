@@ -67,7 +67,13 @@ export function renderBudgetPanel(budget, isActive) {
             h(
               "div",
               { class: "ledger-entry-sub" },
-              h("span", { class: "ledger-meta" }, `${cat.percentage}% of total · ${formatINR(cat.cost_per_guest_inr)} per guest`),
+              h(
+                "span",
+                { class: "ledger-meta" },
+                cat.cost_per_guest_inr
+                  ? `${cat.percentage}% of total · ${formatINR(cat.cost_per_guest_inr)} per guest`
+                  : `${cat.percentage}% of total`
+              ),
               h("div", { class: "ledger-bar-track", "aria-hidden": "true" },
                 h("div", {
                   class: "ledger-bar-fill",

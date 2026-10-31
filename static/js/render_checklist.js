@@ -171,16 +171,21 @@ function renderChecklistItem(item, checkedItems) {
       h(
         "label",
         { for: inputId, class: "checklist-label" },
-        h("span", { class: "checklist-title" }, item.title),
+        h("span", { class: "checklist-title" }, item.text || item.title || "Checklist Task"),
         item.mandatory ? h("span", { class: "mandatory-marker" }, " *Mandatory") : null
       ),
       h(
         "div",
         { class: "checklist-tags-line" },
         h("span", { class: "stage-tag" }, stageLabels[item.stage] || `[${item.stage}]`),
-        h("span", { class: "type-tag" }, typeLabels[item.type] || `[${item.type}]`)
+        h("span", { class: "type-tag" }, typeLabels[item.item_type || item.type] || `[${item.item_type || item.type || "check"}]`)
       ),
-      h("p", { class: "checklist-guidance" }, item.guidance)
+      h("p", { class: "checklist-guidance" },
+        (item.what_to_ask && item.what_to_ask.length ? `Ask: ${item.what_to_ask.join(" · ")}` : "") ||
+        (item.what_to_verify && item.what_to_verify.length ? `Verify: ${item.what_to_verify.join(" · ")}` : "") ||
+        item.guidance ||
+        ""
+      )
     )
   );
 }

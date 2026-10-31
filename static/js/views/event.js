@@ -825,8 +825,14 @@ export const eventView = {
                   h(
                     "label",
                     { for: `chk-${item.item_id}`, class: "checklist-item-label" },
-                    h("span", { class: "checklist-task-title" }, item.task),
-                    item.description ? h("span", { class: "checklist-task-detail" }, item.description) : null
+                    h("span", { class: "checklist-task-title" }, item.text || item.task || item.title || "Checklist Item"),
+                    (item.what_to_ask && item.what_to_ask.length)
+                      ? h("span", { class: "checklist-task-detail" }, `Ask: ${item.what_to_ask[0]}`)
+                      : (item.what_to_verify && item.what_to_verify.length)
+                      ? h("span", { class: "checklist-task-detail" }, `Verify: ${item.what_to_verify[0]}`)
+                      : item.description
+                      ? h("span", { class: "checklist-task-detail" }, item.description)
+                      : null
                   )
                 );
               })
