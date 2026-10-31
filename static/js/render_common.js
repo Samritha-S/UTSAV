@@ -166,7 +166,7 @@ export function createPlanSummary(plan) {
             }
           },
         },
-        "✎ Edit details"
+        "Edit details"
       ),
       h(
         "button",
@@ -176,7 +176,7 @@ export function createPlanSummary(plan) {
           class: "btn btn-outline btn-sm",
           onClick: () => window.print(),
         },
-        "🖨 Print / PDF Programme"
+        "Print / PDF Programme"
       ),
       h(
         "button",

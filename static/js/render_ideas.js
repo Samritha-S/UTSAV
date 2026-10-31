@@ -40,8 +40,8 @@ export function renderIdeasPanel(ideas, eventSummary, isActive) {
         "p",
         { class: "programme-source-notice" },
         ideas.source === "ai"
-          ? "Written by AI specifically for your event (Google Gemini 2.5 Flash)."
-          : "From our curated benchmark regional collection."
+          ? "Written specifically for your celebration by Google Gemini."
+          : "From our curated collection."
       ),
       createKolamMotif("divider", 64, 16)
     ),
@@ -249,14 +249,14 @@ function renderRefinementArea(eventSummary) {
             store.updateIdeas(updatedIdeas);
 
             if (statusEl) {
-              statusEl.textContent = "✓ Creative ideas updated successfully.";
+              statusEl.textContent = "Creative ideas updated successfully.";
               statusEl.className = "refine-status-msg is-success";
             }
             if (inputEl) inputEl.value = "";
           } catch (err) {
             store.setRefineError(err);
             if (statusEl) {
-              statusEl.textContent = `⚠️ Could not update ideas: ${err.userMessage || err.message}`;
+              statusEl.textContent = `Could not update ideas: ${err.userMessage || err.message}`;
               statusEl.className = "refine-status-msg is-error";
             }
           } finally {

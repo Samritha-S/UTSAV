@@ -18,7 +18,13 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.ai.ideas import generate_ideas
 from app.config import get_settings
-from app.models import CreativeIdeas, EventInput, PlanResponse, RefineRequest
+from app.models import (
+    CreativeIdeas,
+    EventInput,
+    PlanResponse,
+    QuickBudgetResponse,
+    RefineRequest,
+)
 from app.planner.budget import allocate_budget
 from app.planner.checklist import build_checklist
 from app.planner.timeline import build_timeline
@@ -200,6 +206,20 @@ def refine_ideas(request: RefineRequest) -> CreativeIdeas:
         refinement=request.refinement_prompt,
     )
     return ideas
+
+
+@app.post(
+    "/api/budget",
+    response_model=QuickBudgetResponse,
+    tags=["Planner"],
+)
+def calculate_quick_budget(event: EventInput) -> QuickBudgetResponse:
+    """Quick deterministic budget calculation and feasibility assessment without generating timeline, checklist, or ideas."""
+    budget = allocate_budget(event)
+    return QuickBudgetResponse(
+        budget=budget,
+        feasibility=budget.feasibility,
+    )
 
 
 # ---------------------------------------------------------------------

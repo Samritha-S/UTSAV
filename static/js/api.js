@@ -49,22 +49,40 @@ export async function refinePlan(eventInput, refinementPrompt) {
 }
 
 /**
+ * Fetch fast deterministic budget allocation and feasibility check.
+ * @param {Object} eventInput
+ * @param {AbortSignal} [signal]
+ * @returns {Promise<Object>} { budget, feasibility }
+ */
+export async function fetchBudget(eventInput, signal = null) {
+  return request("/api/budget", eventInput, signal);
+}
+
+/**
  * Unified internal HTTP request handler.
  * @param {string} endpoint
  * @param {Object} body
+ * @param {AbortSignal} [signal]
  * @returns {Promise<Object>}
  */
-async function request(endpoint, body) {
+async function request(endpoint, body, signal = null) {
   let response;
   try {
-    response = await fetch(endpoint, {
+    const fetchOptions = {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
-    });
+    };
+    if (signal) {
+      fetchOptions.signal = signal;
+    }
+    response = await fetch(endpoint, fetchOptions);
   } catch (err) {
+    if (err && err.name === "AbortError") {
+      throw err;
+    }
     console.error("Network request failed:", err);
     throw new ApiError(
       "NETWORK_ERROR",

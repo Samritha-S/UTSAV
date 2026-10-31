@@ -440,3 +440,12 @@ class RefineResponse(BaseModel):
     refinement_note: str = Field(
         ..., description="Explanation of how the ideas were adapted to the prompt."
     )
+
+
+class QuickBudgetResponse(BaseModel):
+    """Fast response for deterministic budget allocation and feasibility check."""
+
+    budget: BudgetBreakdown = Field(..., description="Deterministic budget breakdown.")
+    feasibility: BudgetFeasibility = Field(
+        ..., description="Budget feasibility analysis and trade-offs."
+    )
