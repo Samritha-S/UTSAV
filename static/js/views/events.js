@@ -24,7 +24,7 @@ import {
   MAX_SAVED_EVENTS,
   renameEvent,
 } from "../storage.js";
-import { formatDate, h, createKolamMotif, humanLabel } from "../utils.js";
+import { formatDate, formatINR, h, humanLabel } from "../utils.js";
 
 /**
  * Calculate human-readable countdown in Asia/Kolkata context.
@@ -80,20 +80,6 @@ export const eventsView = {
     if (!this.rootEl) return;
     this.rootEl.replaceChildren();
 
-    // Masthead
-    const masthead = h(
-      "div",
-      { class: "events-masthead" },
-      createKolamMotif("mark", 28, 28),
-      h("h1", { class: "events-headline", tabindex: "-1" }, "My Saved Celebrations"),
-      h(
-        "p",
-        { class: "events-deck" },
-        "Your library of handcrafted event programmes, budgets, backwards-scheduled timelines, and creative shortlists."
-      )
-    );
-    this.rootEl.appendChild(masthead);
-
     // Storage Availability Notice
     if (!isStorageAvailable()) {
       const storageNotice = h(
@@ -118,6 +104,35 @@ export const eventsView = {
       this.rootEl.appendChild(capNotice);
     }
 
+    // Header bar with Title + Deck left, "Plan another event" right on same line
+    const headerBar = h(
+      "div",
+      { class: "events-header-bar" },
+      h(
+        "div",
+        { class: "events-header-text" },
+        h("h1", { class: "events-headline", tabindex: "-1" }, "My saved celebrations"),
+        h(
+          "p",
+          { class: "events-deck" },
+          "Your library of handcrafted event programmes, budgets, backwards-scheduled timelines, and creative shortlists."
+        )
+      ),
+      h(
+        "a",
+        {
+          href: "#/plan",
+          class: "btn btn-primary events-action-btn",
+          onclick: (e) => {
+            e.preventDefault();
+            if (this.ctx) this.ctx.navigate("#/plan");
+          },
+        },
+        "Plan another event →"
+      )
+    );
+    this.rootEl.appendChild(headerBar);
+
     // Empty State
     if (events.length === 0) {
       this.rootEl.appendChild(this.buildEmptyState());
@@ -127,12 +142,13 @@ export const eventsView = {
     // Ruled Events Ledger Index
     const listCard = h("div", { class: "events-ledger-card" });
 
-    // Table Header Row
+    // Table Header Row: Title, Countdown, Budget, Checklist, Actions
     const headerRow = h(
       "div",
       { class: "events-index-header" },
-      h("span", { class: "events-col-head col-title" }, "Celebration & Scope"),
-      h("span", { class: "events-col-head col-date" }, "Target Date"),
+      h("span", { class: "events-col-head col-title" }, "Celebration & scope"),
+      h("span", { class: "events-col-head col-countdown" }, "Countdown"),
+      h("span", { class: "events-col-head col-budget" }, "Budget"),
       h("span", { class: "events-col-head col-progress" }, "Checklist"),
       h("span", { class: "events-col-head col-actions text-right" }, "Actions")
     );
@@ -145,34 +161,13 @@ export const eventsView = {
 
     listCard.appendChild(rowsContainer);
     this.rootEl.appendChild(listCard);
-
-    // New Event Footer Link
-    this.rootEl.appendChild(
-      h(
-        "div",
-        { class: "events-footer-action" },
-        h(
-          "a",
-          {
-            href: "#/plan",
-            class: "btn btn-primary",
-            onclick: (e) => {
-              e.preventDefault();
-              if (this.ctx) this.ctx.navigate("#/plan");
-            },
-          },
-          "+ Plan Another Event"
-        )
-      )
-    );
   },
 
   buildEmptyState() {
     return h(
       "div",
       { class: "events-empty-state" },
-      createKolamMotif("divider", 64, 16),
-      h("h2", { class: "empty-title", tabindex: "-1" }, "No Saved Programmes Yet"),
+      h("h2", { class: "empty-title", tabindex: "-1" }, "No saved programmes yet"),
       h(
         "p",
         { class: "empty-desc" },
@@ -188,7 +183,7 @@ export const eventsView = {
             if (this.ctx) this.ctx.navigate("#/plan");
           },
         },
-        "Plan Your First Event →"
+        "Plan your first event →"
       )
     );
   },
@@ -199,13 +194,14 @@ export const eventsView = {
       evt.plan?.checklist?.categories?.flatMap((c) => c.items || []).length ||
       0;
     const doneTasks = Array.isArray(evt.checkedItems) ? evt.checkedItems.length : 0;
-    const progressText = totalTasks > 0 ? `${doneTasks} of ${totalTasks} completed` : "—";
+    const progressText = totalTasks > 0 ? `${doneTasks} of ${totalTasks}` : "—";
     const countdown = getCountdownText(evt.formInputs?.event_date);
     const eventType = humanLabel(evt.formInputs?.event_type || "");
+    const budgetAmount = evt.formInputs?.budget_inr || evt.plan?.budget?.total_budget_inr;
 
     const row = h("article", { class: "event-index-row", role: "listitem", id: `event-row-${evt.id}` });
 
-    // Col 1: Title & Type
+    // Col 1: Title & metadata underneath
     const titleLink = h(
       "a",
       {
@@ -219,40 +215,46 @@ export const eventsView = {
       evt.title || "Untitled Celebration"
     );
 
+    const metaParts = [];
+    if (evt.formInputs?.event_date) metaParts.push(formatDate(evt.formInputs.event_date));
+    if (eventType) metaParts.push(eventType);
+    if (evt.formInputs?.city) metaParts.push(evt.formInputs.city);
+
     const colTitle = h(
       "div",
       { class: "col-title" },
       titleLink,
-      h(
-        "div",
-        { class: "event-row-meta" },
-        h("span", { class: "event-type-mark" }, eventType),
-        h("span", { class: "meta-sep" }, "·"),
-        h("span", { class: "event-countdown-deck" }, countdown)
-      )
+      h("div", { class: "event-row-meta" }, metaParts.join(" · "))
     );
 
-    // Col 2: Date
-    const colDate = h(
+    // Col 2: Countdown
+    const colCountdown = h(
       "div",
-      { class: "col-date" },
-      h("span", { class: "event-formatted-date" }, formatDate(evt.formInputs?.event_date)),
-      h("span", { class: "event-city-tag" }, evt.formInputs?.city || "")
+      { class: "col-countdown" },
+      h("span", { class: "event-countdown-deck" }, countdown || "—")
     );
 
-    // Col 3: Checklist Progress
+    // Col 3: Budget
+    const colBudget = h(
+      "div",
+      { class: "col-budget" },
+      h("span", { class: "event-budget-amount table-amount" }, budgetAmount ? formatINR(budgetAmount) : "—")
+    );
+
+    // Col 4: Checklist Progress
     const colProgress = h(
       "div",
       { class: "col-progress" },
       h("span", { class: "progress-counter-text" }, progressText)
     );
 
-    // Col 4: Action Buttons
-    const colActions = h("div", { class: "col-actions" });
+    // Col 5: Action Buttons
+    const colActions = h("div", { class: "col-actions text-right" });
     this.renderRowDefaultActions(colActions, evt, row, titleLink);
 
     row.appendChild(colTitle);
-    row.appendChild(colDate);
+    row.appendChild(colCountdown);
+    row.appendChild(colBudget);
     row.appendChild(colProgress);
     row.appendChild(colActions);
 
@@ -261,6 +263,19 @@ export const eventsView = {
 
   renderRowDefaultActions(actionsCell, evt, row, titleLink) {
     actionsCell.replaceChildren();
+
+    const openLink = h(
+      "a",
+      {
+        href: `#/event/${evt.id}`,
+        class: "action-link-btn",
+        onclick: (e) => {
+          e.preventDefault();
+          if (this.ctx) this.ctx.navigate(`#/event/${evt.id}`);
+        },
+      },
+      "Open"
+    );
 
     const renameBtn = h(
       "button",
