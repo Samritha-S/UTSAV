@@ -2913,6 +2913,12 @@ select.form-select {
   box-sizing: border-box;
 }
 
+.events-empty-state .kolam-divider {
+  margin-inline: auto;
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
 .empty-title {
   font-family: var(--font-serif);
   font-size: 1.5rem;

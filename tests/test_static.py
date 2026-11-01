@@ -425,3 +425,10 @@ def test_tab_labels_and_panel_intros():
         in event_js
     )
     assert "Ideas with an Indian soul, shaped by your budget and preferences." in event_js
+
+
+def test_empty_state_divider_centered():
+    """Verify the diamond motif divider is centered inside the events empty state."""
+    css_content = (STATIC_DIR / "styles.css").read_text(encoding="utf-8")
+    assert ".events-empty-state .kolam-divider" in css_content
+    assert "margin-inline: auto;" in css_content
