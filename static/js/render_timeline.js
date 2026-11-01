@@ -63,7 +63,7 @@ export function renderTimelinePanel(timeline, isActive) {
         { class: "panel-deck" },
         "Your plan, worked backwards from the big day."
       ),
-      createKolamMotif("divider", 64, 16)
+      h("hr", { class: "panel-divider-rule", "aria-hidden": "true" })
     ),
 
     // Crunch Mode Advisory Banner if active

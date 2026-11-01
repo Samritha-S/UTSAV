@@ -54,7 +54,7 @@ export function renderChecklistPanel(checklist, budget, checkedItems, isActive) 
       h("p", { class: "panel-deck" },
         "Things to confirm with each vendor. Rules and costs vary by city, so verify locally."
       ),
-      createKolamMotif("divider", 64, 16)
+      h("hr", { class: "panel-divider-rule", "aria-hidden": "true" })
     ),
 
     // Progress Tracker Bar (Native HTML5 <progress>)

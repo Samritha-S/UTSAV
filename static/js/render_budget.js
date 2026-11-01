@@ -35,7 +35,7 @@ export function renderBudgetPanel(budget, isActive) {
       h("p", { class: "panel-deck" },
         "Where every rupee goes. These are planning estimates, so treat them as a starting point."
       ),
-      createKolamMotif("divider", 64, 16)
+      h("hr", { class: "panel-divider-rule", "aria-hidden": "true" })
     ),
 
     // Ledger Table / Block

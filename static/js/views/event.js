@@ -112,17 +112,25 @@ export const eventView = {
     const countdownInfo = this.computeCountdown(ev.event_date);
     const summarySentence = this.buildSummarySentence(ev, budget);
 
-    const masthead = h(
-      "section",
-      { class: "programme-masthead", "aria-labelledby": "event-main-heading" },
+    const layout = h("div", { class: "programme-two-column-layout" });
+
+    // LEFT Column: Breadcrumbs, Title + Accent Mark, Tear-off Countdown, Figures, Urgent Action, Toolbar
+    const sidebar = h(
+      "aside",
+      { class: "programme-sidebar", "aria-labelledby": "event-main-heading" },
+      breadcrumb,
       h(
         "div",
-        { class: "masthead-top-bar" },
-        h("div", { class: "masthead-brand-mark" }, createKolamMotif("mark", 24, 24)),
-        h("span", { class: "masthead-category-tag" }, `${(ev.event_type || "Event").toUpperCase()} PROGRAMME`)
+        { class: "programme-title-group" },
+        h("h1", { id: "event-main-heading", class: "event-headline", tabindex: "-1" }, this.event.title),
+        h("span", { class: "event-title-accent", "aria-hidden": "true" }, createKolamMotif("mark", 20, 20))
       ),
-      h("h1", { id: "event-main-heading", class: "event-headline", tabindex: "-1" }, this.event.title),
-      h("p", { class: "countdown-serif-banner", "aria-label": `Countdown: ${countdownInfo.text}` }, countdownInfo.text),
+      h(
+        "div",
+        { class: "countdown-tear-off", "aria-label": `Countdown: ${countdownInfo.text}` },
+        h("span", { class: "countdown-num" }, countdownInfo.days > 0 ? String(countdownInfo.days) : (countdownInfo.days === 0 ? "0" : String(Math.abs(countdownInfo.days)))),
+        h("span", { class: "countdown-label" }, countdownInfo.days > 0 ? (countdownInfo.days === 1 ? "day to go" : "days to go") : (countdownInfo.days === 0 ? "today" : "days ago"))
+      ),
       h("p", { class: "editorial-lead-sentence" }, summarySentence),
 
       // Ruled Two-Column Key Figures List
@@ -199,74 +207,73 @@ export const eventView = {
       ),
 
       // Single Most Urgent Next Action
-      this.renderMostUrgentAction(timeline)
-    );
-    view.appendChild(masthead);
+      this.renderMostUrgentAction(timeline),
 
-    // -----------------------------------------------------------------
-    // 2. Action Toolbar: Copy Summary, Print, My Events
-    // -----------------------------------------------------------------
-    const toolbar = h(
-      "div",
-      { class: "programme-toolbar no-print" },
+      // Toolbar
       h(
-        "a",
-        {
-          href: `#/plan/${ev.event_type || "wedding"}`,
-          class: "btn btn-outline btn-sm",
-          onclick: (e) => {
-            e.preventDefault();
-            ctx.navigate(`#/plan/${ev.event_type || "wedding"}`);
+        "div",
+        { class: "programme-toolbar no-print" },
+        h(
+          "a",
+          {
+            href: `#/plan/${ev.event_type || "wedding"}`,
+            class: "btn btn-outline btn-sm",
+            onclick: (e) => {
+              e.preventDefault();
+              ctx.navigate(`#/plan/${ev.event_type || "wedding"}`);
+            },
           },
-        },
-        "Edit details"
-      ),
-      h(
-        "button",
-        {
-          type: "button",
-          id: "copy-summary-btn",
-          class: "btn btn-outline btn-sm",
-          onclick: (e) => this.copySummaryToClipboard(e.target),
-        },
-        "Copy summary"
-      ),
-      h(
-        "button",
-        {
-          type: "button",
-          class: "btn btn-outline btn-sm",
-          onclick: () => window.print(),
-        },
-        "Print / PDF"
-      ),
-      h(
-        "button",
-        {
-          type: "button",
-          id: "start-over-btn",
-          class: "btn btn-outline btn-sm",
-          onclick: () => {
-            const confirmed = window.confirm("Start over? This will reset all checklist progress and scenario adjustments for this celebration.");
-            if (confirmed) {
-              updateEvent(this.event.id, { checkedItems: [], scenarioBudget: null });
-              this.event.checkedItems = [];
-              this.event.scenarioBudget = null;
-              ctx.announce("Celebration progress reset to original plan.");
-              const checkboxes = document.querySelectorAll(".checklist-item-row input[type='checkbox']");
-              checkboxes.forEach((cb) => { cb.checked = false; });
-              const resetBtn = document.getElementById("whatif-reset-btn");
-              if (resetBtn) resetBtn.click();
-            }
+          "Edit details"
+        ),
+        h(
+          "button",
+          {
+            type: "button",
+            id: "copy-summary-btn",
+            class: "btn btn-outline btn-sm",
+            onclick: (e) => this.copySummaryToClipboard(e.target),
           },
-        },
-        "Start over"
+          "Copy summary"
+        ),
+        h(
+          "button",
+          {
+            type: "button",
+            class: "btn btn-outline btn-sm",
+            onclick: () => window.print(),
+          },
+          "Print / PDF"
+        ),
+        h(
+          "button",
+          {
+            type: "button",
+            id: "start-over-btn",
+            class: "btn btn-outline btn-sm",
+            onclick: () => {
+              const confirmed = window.confirm("Start over? This will reset all checklist progress and scenario adjustments for this celebration.");
+              if (confirmed) {
+                updateEvent(this.event.id, { checkedItems: [], scenarioBudget: null });
+                this.event.checkedItems = [];
+                this.event.scenarioBudget = null;
+                ctx.announce("Celebration progress reset to original plan.");
+                const checkboxes = document.querySelectorAll(".checklist-item-row input[type='checkbox']");
+                checkboxes.forEach((cb) => { cb.checked = false; });
+                const resetBtn = document.getElementById("whatif-reset-btn");
+                if (resetBtn) resetBtn.click();
+              }
+            },
+          },
+          "Start over"
+        )
       )
     );
-    view.appendChild(toolbar);
+
+    // RIGHT Column: Tabs and Panels
+    const mainColumn = h("div", { class: "programme-main-column" });
 
     // -----------------------------------------------------------------
-    // 3. WAI-ARIA Tab Navigation
+    // WAI-ARIA Tab Navigation
     // -----------------------------------------------------------------
     const tabsList = h(
       "div",
@@ -295,10 +302,10 @@ export const eventView = {
         );
       })
     );
-    view.appendChild(tabsList);
+    mainColumn.appendChild(tabsList);
 
     // -----------------------------------------------------------------
-    // 4. Panels Container
+    // Panels Container
     // -----------------------------------------------------------------
     const panelsContainer = h("div", { id: "panels-container", class: "panels-container" });
 
@@ -314,8 +321,13 @@ export const eventView = {
     // Panel D: Creative Ideas with Shortlist
     panelsContainer.appendChild(this.buildIdeasPanel(ideas, ev, this.event.shortlist, ctx));
 
-    view.appendChild(panelsContainer);
-    container.appendChild(view);
+    mainColumn.appendChild(panelsContainer);
+
+    layout.appendChild(sidebar);
+    layout.appendChild(mainColumn);
+    view.appendChild(layout);
+
+    container.replaceChildren(view);
   },
 
   // -------------------------------------------------------------------
@@ -381,9 +393,9 @@ export const eventView = {
       h(
         "div",
         { class: "panel-masthead" },
-        h("h2", { class: "panel-headline" }, "Budget Allocation & Spending Ledger"),
+        h("h2", { class: "panel-headline" }, "Budget allocation and spending ledger"),
         h("p", { class: "panel-deck" }, "Where every rupee goes. These are planning estimates, so treat them as a starting point."),
-        createKolamMotif("divider", 64, 16)
+        h("hr", { class: "panel-divider-rule", "aria-hidden": "true" })
       ),
 
       // "What if..." Interactive Simulation Panel
@@ -695,9 +707,9 @@ export const eventView = {
       h(
         "div",
         { class: "panel-masthead" },
-        h("h2", { class: "panel-headline" }, "Backwards-Scheduled Run-of-Show Timeline"),
-        h("p", { class: "panel-deck" }, "Your plan, worked backwards from the big day."),
-        createKolamMotif("divider", 64, 16)
+        h("h2", { class: "panel-headline" }, "Backwards-scheduled run-of-show timeline"),
+        h("p", { class: "panel-deck" }, "Key milestones leading up to the celebration, followed by a minute-by-minute schedule for the day itself."),
+        h("hr", { class: "panel-divider-rule", "aria-hidden": "true" })
       ),
 
       // Calendar Export Action Banner
@@ -783,9 +795,9 @@ export const eventView = {
       h(
         "div",
         { class: "panel-masthead" },
-        h("h2", { class: "panel-headline" }, "Vendor Diligence & Compliance Checklist"),
-        h("p", { class: "panel-deck" }, "Things to confirm with each vendor. Rules and costs vary by city, so verify locally."),
-        createKolamMotif("divider", 64, 16)
+        h("h2", { class: "panel-headline" }, "Vendor diligence and compliance checklist"),
+        h("p", { class: "panel-deck" }, "Practical tasks to tackle, organized by priority so you can focus on what matters next."),
+        h("hr", { class: "panel-divider-rule", "aria-hidden": "true" })
       ),
 
       // Progress & Filter Toolbar
@@ -995,8 +1007,8 @@ export const eventView = {
       h(
         "div",
         { class: "panel-masthead" },
-        h("h2", { class: "panel-headline" }, "Creative Themes & Culinary Concepts"),
-        h("p", { class: "panel-deck" }, "Ideas with an Indian soul, shaped by your budget and preferences."),
+        h("h2", { class: "panel-headline" }, "Creative themes and culinary concepts"),
+        h("p", { class: "panel-deck" }, "Themes, menus and cultural touches tailored to your celebration. Pick what resonates and ignore the rest."),
         h(
           "p",
           { class: "programme-source-notice" },
@@ -1004,7 +1016,7 @@ export const eventView = {
             ? "Written specifically for your celebration by Google Gemini."
             : "From our curated collection."
         ),
-        createKolamMotif("divider", 64, 16)
+        h("hr", { class: "panel-divider-rule", "aria-hidden": "true" })
       ),
 
       // "Your Shortlist" Block

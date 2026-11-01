@@ -44,7 +44,7 @@ export function renderIdeasPanel(ideas, eventSummary, isActive) {
           ? "Written specifically for your celebration by Google Gemini."
           : "From our curated collection."
       ),
-      createKolamMotif("divider", 64, 16)
+      h("hr", { class: "panel-divider-rule", "aria-hidden": "true" })
     ),
 
     // 1. Celebratory Themes (3 Themes)
