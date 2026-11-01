@@ -30,6 +30,7 @@ import { getPreselectedEventType } from "./landing.js";
 export const planView = {
   activeStageTimer: null,
   currentStep: 1,
+  isSubmitting: false,
   formData: {
     event_type: "wedding",
     event_date: "",
@@ -47,22 +48,23 @@ export const planView = {
     ctx.setTitle("Plan an Event — Guided Intake");
     ctx.announce("Step 1 of 3: What are you celebrating. Please fill out event type, date and city.");
 
-    // Check for preselected event type from landing door or session
-    const preselected = getPreselectedEventType() || "wedding";
+    // Check for preselected event type from URL path params, query params, or landing door
+    const preselected = ctx.params?.type || getPreselectedEventType() || "wedding";
     this.formData.event_type = preselected;
     if (!this.formData.event_date) {
       this.formData.event_date = getOffsetDateString(60);
     }
     this.currentStep = 1;
+    this.isSubmitting = false;
 
-    const view = h("div", { class: "intake-view-container" });
+    const view = h("div", { class: "intake-view-container", "data-view": "plan" });
 
     // Header strip
     const header = h(
       "div",
       { class: "intake-masthead" },
       createKolamMotif("mark", 28, 28),
-      h("h1", { class: "intake-headline", tabindex: "-1" }, "Event Intake & Requirements"),
+      h("h1", { class: "intake-headline", tabindex: "-1" }, "Tell us about the day"),
       h(
         "p",
         { id: "step-indicator-text", class: "step-indicator-deck", "aria-live": "polite" },
@@ -482,13 +484,13 @@ export const planView = {
     );
     form.appendChild(step3);
 
-    // Staged Loading Indicator Screen
+    // Staged Loading Indicator Screen (Own Centered Full View block)
     const loadingScreen = h(
       "div",
       { id: "staged-loading-screen", class: "loading-state is-hidden", "aria-live": "polite" },
-      createKolamMotif("spinner", 40, 40),
-      h("p", { id: "staged-loading-text", class: "loading-stage-text" }, "Working out your budget allocations..."),
-      h("p", { class: "loading-notice-text" }, "Generative AI suggestions formulated via Google Gemini require about 8–15 seconds."),
+      createKolamMotif("spinner", 48, 48),
+      h("h2", { id: "staged-loading-text", class: "loading-stage-text" }, "Crafting your programme..."),
+      h("p", { class: "loading-notice-text" }, "The creative ideas can take about 10 seconds. Everything else is already done."),
       h(
         "div",
         { class: "loading-skeleton-lines", "aria-hidden": "true" },
@@ -497,10 +499,10 @@ export const planView = {
         h("div", { class: "skeleton-line skeleton-short" })
       )
     );
-    form.appendChild(loadingScreen);
 
     view.appendChild(form);
-    container.appendChild(view);
+    view.appendChild(loadingScreen);
+    container.replaceChildren(view);
   },
 
   goToStep(step) {
@@ -665,7 +667,12 @@ export const planView = {
   },
 
   async submitPlan(ctx) {
+    if (this.isSubmitting) return;
     if (!this.validateCurrentStep()) return;
+    this.isSubmitting = true;
+
+    const submitBtn = document.getElementById("intake-submit-btn");
+    if (submitBtn) submitBtn.disabled = true;
 
     const payload = {
       event_type: this.formData.event_type,
@@ -682,18 +689,22 @@ export const planView = {
       payload.age_group = this.formData.age_group;
     }
 
-    // Hide steps, show staged loading screen
-    const step3 = document.getElementById("step-3-panel");
+    // Hide wizard chrome (title, step indicator, sample plan) and form; show centered full loading screen
+    const masthead = document.querySelector(".intake-masthead");
+    const form = document.getElementById("intake-form");
     const loading = document.getElementById("staged-loading-screen");
     const stageText = document.getElementById("staged-loading-text");
-    if (step3) step3.classList.add("is-hidden");
+
+    if (masthead) masthead.classList.add("is-hidden");
+    if (form) form.classList.add("is-hidden");
     if (loading) loading.classList.remove("is-hidden");
 
     // Staged progress messages
     const stages = [
-      "Working out your budget allocations...",
-      "Building your timeline run-of-show...",
-      "Asking for creative ideas... (this can take about 10 seconds)",
+      "Crafting your programme...",
+      "Balancing your budget allocations...",
+      "Building your timeline milestones...",
+      "Curating culturally tailored ideas...",
     ];
     let stageIdx = 0;
     this.activeStageTimer = setInterval(() => {
@@ -722,12 +733,17 @@ export const planView = {
         scenarioBudget: null,
       });
 
+      this.isSubmitting = false;
       const eventId = saveResult.ok && saveResult.event ? saveResult.event.id : "demo";
       ctx.navigate(`#/event/${eventId}`);
     } catch (err) {
       clearInterval(this.activeStageTimer);
+      this.isSubmitting = false;
+      if (submitBtn) submitBtn.disabled = false;
+
+      if (masthead) masthead.classList.remove("is-hidden");
+      if (form) form.classList.remove("is-hidden");
       if (loading) loading.classList.add("is-hidden");
-      if (step3) step3.classList.remove("is-hidden");
 
       const globalError = document.getElementById("intake-error-banner");
       if (globalError) {
@@ -739,6 +755,7 @@ export const planView = {
   },
 
   unmount() {
+    this.isSubmitting = false;
     if (this.activeStageTimer) {
       clearInterval(this.activeStageTimer);
       this.activeStageTimer = null;

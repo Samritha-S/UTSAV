@@ -11,13 +11,15 @@
 import { h, createKolamMotif } from "../utils.js";
 
 export const notFoundView = {
+  rootEl: null,
+
   mount(container, ctx) {
     ctx.setTitle("Page Not Found");
     ctx.announce("Page not found. Showing navigation options to return home.");
 
     const view = h(
       "section",
-      { class: "not-found-section", "aria-labelledby": "not-found-heading" },
+      { class: "not-found-section", "data-view": "not-found", "aria-labelledby": "not-found-heading" },
       h(
         "div",
         { class: "not-found-card" },
@@ -59,10 +61,11 @@ export const notFoundView = {
       )
     );
 
+    this.rootEl = view;
     container.appendChild(view);
   },
 
   unmount() {
-    // No ongoing listeners to unmount
+    this.rootEl = null;
   },
 };

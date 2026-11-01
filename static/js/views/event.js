@@ -85,7 +85,7 @@ export const eventView = {
     ctx.setTitle(this.event.title);
     ctx.announce(`Viewing programme for ${this.event.title}.`);
 
-    const view = h("div", { class: "event-view-container" });
+    const view = h("div", { class: "event-view-container", "data-view": "event" });
 
     // -----------------------------------------------------------------
     // 1. Editorial Header & Large Countdown
@@ -191,6 +191,18 @@ export const eventView = {
       "div",
       { class: "programme-toolbar no-print" },
       h(
+        "a",
+        {
+          href: `#/plan/${ev.event_type || "wedding"}`,
+          class: "btn btn-outline btn-sm",
+          onclick: (e) => {
+            e.preventDefault();
+            ctx.navigate(`#/plan/${ev.event_type || "wedding"}`);
+          },
+        },
+        "Edit details"
+      ),
+      h(
         "button",
         {
           type: "button",
@@ -208,6 +220,28 @@ export const eventView = {
           onclick: () => window.print(),
         },
         "Print / PDF"
+      ),
+      h(
+        "button",
+        {
+          type: "button",
+          id: "start-over-btn",
+          class: "btn btn-outline btn-sm",
+          onclick: () => {
+            const confirmed = window.confirm("Start over? This will reset all checklist progress and scenario adjustments for this celebration.");
+            if (confirmed) {
+              updateEvent(this.event.id, { checkedItems: [], scenarioBudget: null });
+              this.event.checkedItems = [];
+              this.event.scenarioBudget = null;
+              ctx.announce("Celebration progress reset to original plan.");
+              const checkboxes = document.querySelectorAll(".checklist-item-row input[type='checkbox']");
+              checkboxes.forEach((cb) => { cb.checked = false; });
+              const resetBtn = document.getElementById("whatif-reset-btn");
+              if (resetBtn) resetBtn.click();
+            }
+          },
+        },
+        "Start over"
       ),
       h(
         "a",
@@ -439,8 +473,12 @@ export const eventView = {
                   updateEvent(this.event.id, {
                     scenarioBudget: currentBudget,
                   });
-                  window.alert("Scenario numbers kept for this celebration. Timeline and ideas remain aligned to your original inputs.");
-                  ctx.navigate(`#/event/${this.event.id}`);
+                  this.event.scenarioBudget = currentBudget;
+                  const diffMsg = document.getElementById("whatif-diff-text");
+                  if (diffMsg) {
+                    diffMsg.textContent = "Scenario numbers saved as the active ledger balance for this celebration.";
+                  }
+                  if (ctx) ctx.announce("Scenario budget numbers saved.");
                 },
               },
               "Keep these numbers"
@@ -449,10 +487,26 @@ export const eventView = {
               "button",
               {
                 type: "button",
+                id: "whatif-reset-btn",
                 class: "btn btn-text btn-xs",
                 onclick: () => {
                   updateEvent(this.event.id, { scenarioBudget: null });
-                  ctx.navigate(`#/event/${this.event.id}`);
+                  this.event.scenarioBudget = null;
+                  const guestSlider = document.getElementById("whatif-guests-slider");
+                  const budgetSlider = document.getElementById("whatif-budget-slider");
+                  if (guestSlider) {
+                    guestSlider.value = String(ev.guest_count);
+                    guestSlider.dispatchEvent(new Event("input"));
+                  }
+                  if (budgetSlider) {
+                    budgetSlider.value = String(plan.budget.total_budget_inr);
+                    budgetSlider.dispatchEvent(new Event("input"));
+                  }
+                  const diffMsg = document.getElementById("whatif-diff-text");
+                  if (diffMsg) {
+                    diffMsg.textContent = "Reset to original plan allocation.";
+                  }
+                  if (ctx) ctx.announce("Reset budget to original plan.");
                 },
               },
               "Reset to original"
@@ -723,7 +777,7 @@ export const eventView = {
         "div",
         { class: "panel-masthead" },
         h("h2", { class: "panel-headline" }, "Vendor Diligence & Compliance Checklist"),
-        h("p", { class: "panel-deck" }, "Statutory sound clearances, generator power infrastructure, contract deliverables, and tasting appointments."),
+        h("p", { class: "panel-deck" }, "Sound clearances to verify locally, generator power infrastructure, contract deliverables, and tasting appointments."),
         createKolamMotif("divider", 64, 16)
       ),
 
@@ -1159,16 +1213,39 @@ export const eventView = {
   },
 
   async executeRefinement(ev, prompt, ctx) {
+    if (this.refining) return;
+    this.refining = true;
+
     const statusMsg = document.getElementById("refinement-status-msg");
+    const refineBtns = document.querySelectorAll(".refinement-actions .btn");
+    refineBtns.forEach((b) => {
+      b.disabled = true;
+    });
     if (statusMsg) statusMsg.textContent = "Generating fresh ideas from Google Gemini...";
 
     try {
       const newIdeas = await refinePlan(ev, prompt);
+      this.refining = false;
+      refineBtns.forEach((b) => {
+        b.disabled = false;
+      });
       const updatedPlan = { ...this.event.plan, ideas: newIdeas };
+      this.event.plan = updatedPlan;
       updateEvent(this.event.id, { plan: updatedPlan });
       if (statusMsg) statusMsg.textContent = "Ideas refreshed.";
-      ctx.navigate(`#/event/${this.event.id}`);
+      if (ctx) ctx.announce("Fresh ideas generated.");
+
+      // Replace the ideas panel contents in place without navigating
+      const panelIdeas = document.getElementById("panel-ideas");
+      if (panelIdeas && panelIdeas.parentNode) {
+        const newPanel = this.buildIdeasPanel(newIdeas, ev, this.event.shortlist, ctx);
+        panelIdeas.parentNode.replaceChild(newPanel, panelIdeas);
+      }
     } catch (err) {
+      this.refining = false;
+      refineBtns.forEach((b) => {
+        b.disabled = false;
+      });
       if (statusMsg) statusMsg.textContent = err.userMessage || "Could not refresh ideas. Please try again.";
     }
   },
@@ -1291,6 +1368,7 @@ export const eventView = {
   },
 
   unmount() {
+    this.refining = false;
     if (this.whatifDebounceTimer) {
       clearTimeout(this.whatifDebounceTimer);
       this.whatifDebounceTimer = null;
