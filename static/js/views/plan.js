@@ -57,34 +57,7 @@ export const planView = {
     this.currentStep = 1;
     this.isSubmitting = false;
 
-    const view = h("div", { class: "intake-view-container narrow", "data-view": "plan" });
-
-    // Header strip
-    const header = h(
-      "div",
-      { class: "intake-masthead" },
-      createKolamMotif("mark", 28, 28),
-      h("h1", { class: "intake-headline", tabindex: "-1" }, "Tell us about the day"),
-      h(
-        "div",
-        { class: "step-indicator-row" },
-        h(
-          "p",
-          { id: "step-indicator-text", class: "step-indicator-deck", "aria-live": "polite" },
-          "Step 1 of 3: What are you celebrating"
-        ),
-        h(
-          "button",
-          {
-            type: "button",
-            class: "btn-sample-plan",
-            onclick: () => this.populateSamplePreset(),
-          },
-          "Try a sample plan"
-        )
-      )
-    );
-    view.appendChild(header);
+    const view = h("div", { class: "intake-view-container frame", "data-view": "plan" });
 
     // Global Error Banner
     const globalError = h("div", {
@@ -93,7 +66,6 @@ export const planView = {
       role: "alert",
       "aria-live": "assertive",
     });
-    view.appendChild(globalError);
 
     // Form element
     const form = h("form", { id: "intake-form", novalidate: true });
@@ -478,7 +450,7 @@ export const planView = {
             class: "btn btn-primary btn-lg",
             onclick: () => this.submitPlan(ctx),
           },
-          "Craft celebration programme →"
+          "Generate my celebration programme →"
         )
       )
     );
@@ -500,8 +472,91 @@ export const planView = {
       )
     );
 
-    view.appendChild(form);
-    view.appendChild(loadingScreen);
+    // Two-Column Layout (Desktop >= 900px, Single Column < 900px)
+    const layout = h("div", { class: "wizard-layout" });
+
+    // LEFT Column: Sidebar with View Title, Desktop Step List, Mobile Step Line, Sample Action
+    const sidebar = h(
+      "aside",
+      { class: "wizard-sidebar", "aria-label": "Planning steps" },
+      h("h1", { class: "wizard-headline", tabindex: "-1" }, "Tell us about the day"),
+      
+      // Desktop vertical step list (>= 900px)
+      h(
+        "nav",
+        { class: "wizard-steps-nav", "aria-label": "Form steps" },
+        h(
+          "ol",
+          { class: "wizard-steps-list", role: "list" },
+          ...[
+            { num: 1, name: "Celebration" },
+            { num: 2, name: "Guests and budget" },
+            { num: 3, name: "Preferences" },
+          ].map((item) => {
+            const isCurrent = this.currentStep === item.num;
+            return h(
+              "li",
+              {
+                class: `wizard-step-row ${isCurrent ? "is-current" : ""}`,
+                id: `wizard-step-row-${item.num}`,
+                "aria-current": isCurrent ? "step" : "false",
+                onclick: () => {
+                  if (item.num < this.currentStep) {
+                    this.goToStep(item.num);
+                  }
+                },
+              },
+              h("span", { class: "step-row-num" }, `${item.num}`),
+              h("span", { class: "step-row-name" }, item.name)
+            );
+          })
+        ),
+        h(
+          "div",
+          { class: "wizard-sidebar-action" },
+          h(
+            "button",
+            {
+              type: "button",
+              class: "btn-sample-plan desktop-sample-btn",
+              onclick: () => this.populateSamplePreset(),
+            },
+            "Try a sample plan"
+          )
+        )
+      ),
+
+      // Mobile compact step line (< 900px)
+      h(
+        "div",
+        { class: "wizard-mobile-header" },
+        h(
+          "p",
+          { id: "step-indicator-text", class: "step-indicator-mobile", "aria-live": "polite" },
+          "Step 1 of 3: Celebration"
+        ),
+        h(
+          "button",
+          {
+            type: "button",
+            class: "btn-sample-plan mobile-sample-btn",
+            onclick: () => this.populateSamplePreset(),
+          },
+          "Try a sample plan"
+        )
+      )
+    );
+
+    // RIGHT Column: Form Card & Loading Screen
+    const content = h("div", { class: "wizard-main-column" });
+    content.appendChild(globalError);
+    content.appendChild(form);
+    content.appendChild(loadingScreen);
+
+    layout.appendChild(sidebar);
+    layout.appendChild(content);
+    view.appendChild(layout);
+
     container.replaceChildren(view);
   },
 
@@ -521,13 +576,21 @@ export const planView = {
     if (step3) step3.classList.toggle("is-hidden", step !== 3);
 
     const stepTitles = {
-      1: "Step 1 of 3: What are you celebrating",
-      2: "Step 2 of 3: The guests and the money",
-      3: "Step 3 of 3: Preferences & details",
+      1: "Step 1 of 3: Celebration",
+      2: "Step 2 of 3: Guests and budget",
+      3: "Step 3 of 3: Preferences",
     };
     if (indicator) {
       indicator.textContent = stepTitles[step] || "";
     }
+
+    [1, 2, 3].forEach((s) => {
+      const row = document.getElementById(`wizard-step-row-${s}`);
+      if (row) {
+        row.classList.toggle("is-current", s === step);
+        row.setAttribute("aria-current", s === step ? "step" : "false");
+      }
+    });
   },
 
   validateCurrentStep() {
@@ -671,7 +734,7 @@ export const planView = {
     if (!this.validateCurrentStep()) return;
     this.isSubmitting = true;
 
-    const submitBtn = document.getElementById("intake-submit-btn");
+    const submitBtn = document.getElementById("submit-plan-btn") || document.getElementById("intake-submit-btn");
     if (submitBtn) submitBtn.disabled = true;
 
     const payload = {
@@ -691,11 +754,15 @@ export const planView = {
 
     // Hide wizard chrome (title, step indicator, sample plan) and form; show centered full loading screen
     const masthead = document.querySelector(".intake-masthead");
+    const sidebar = document.querySelector(".wizard-sidebar");
+    const layout = document.querySelector(".wizard-layout");
     const form = document.getElementById("intake-form");
     const loading = document.getElementById("staged-loading-screen");
     const stageText = document.getElementById("staged-loading-text");
 
     if (masthead) masthead.classList.add("is-hidden");
+    if (sidebar) sidebar.classList.add("is-hidden");
+    if (layout) layout.classList.add("is-loading");
     if (form) form.classList.add("is-hidden");
     if (loading) loading.classList.remove("is-hidden");
 
@@ -742,6 +809,8 @@ export const planView = {
       if (submitBtn) submitBtn.disabled = false;
 
       if (masthead) masthead.classList.remove("is-hidden");
+      if (sidebar) sidebar.classList.remove("is-hidden");
+      if (layout) layout.classList.remove("is-loading");
       if (form) form.classList.remove("is-hidden");
       if (loading) loading.classList.add("is-hidden");
 
