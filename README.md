@@ -516,6 +516,7 @@ Health check and readiness endpoint.
   - Warm Indian celebration theme: Deep forest green (`#1F5B45`), marigold gold (`#E0A100`), vermilion red (`#B3261E`), near-black ink (`#1F1B16`), and warm paper (`#FBF7EF`).
   - Zero gradients, zero pill/badge capsules, sharp 2px editorial corners, plain text labels or inline SVG marks (zero emoji), and authentic geometric Kolam/Rangoli vector motifs.
   - High text-to-background contrast ratios engineered to meet WCAG 2.1 AA readability standards (4.5:1+ for body text).
+  - **Unified Page Shell & Strict View Lifecycle**: A persistent solid header with an opaque warm paper background cleanly separates site navigation from hero content. The Kolam seal visual is strictly isolated within the hero stage using SVG clipping boundaries without negative coordinate offsets. Views follow a strict lifecycle managed by HashRouter where outgoing views unmount their listeners and replace child nodes cleanly, guaranteeing exactly one view root and eliminating UI duplication or double-firing actions. Header, main, and footer align to a shared container token with consistent horizontal margins.
 
 ---
 

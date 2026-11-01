@@ -266,7 +266,7 @@ def test_js_contains_no_badge_or_pill_class_names():
 
 
 # ---------------------------------------------------------------------
-# 8. Full-Window Landing Hero Constraints
+# 8. Full-Window Landing Hero Constraints & Header Separation
 # ---------------------------------------------------------------------
 def test_landing_hero_viewport_and_css_rules():
     """Verify .landing-hero styling satisfies full-window layout constraints without fixed heights."""
@@ -278,21 +278,83 @@ def test_landing_hero_viewport_and_css_rules():
     assert hero_block_match is not None, "Could not find .landing-hero rule in styles.css"
     hero_block = hero_block_match.group(1)
 
-    # 1. Must use min-height with modern viewport units to prevent clipping
-    assert "min-height: 100vh;" in hero_block, "Expected min-height: 100vh on .landing-hero"
-    assert "min-height: 100svh;" in hero_block, "Expected min-height: 100svh on .landing-hero"
-    assert "min-height: 100dvh;" in hero_block, "Expected min-height: 100dvh on .landing-hero"
+    # 1. Must use min-height with modern viewport units and header offset to prevent clipping
+    assert "min-height: calc(100vh - var(--header-h));" in hero_block, (
+        "Expected min-height: calc(100vh - var(--header-h)) on .landing-hero"
+    )
+    assert "min-height: calc(100svh - var(--header-h));" in hero_block, (
+        "Expected min-height: calc(100svh - var(--header-h)) on .landing-hero"
+    )
+    assert "min-height: calc(100dvh - var(--header-h));" in hero_block, (
+        "Expected min-height: calc(100dvh - var(--header-h)) on .landing-hero"
+    )
 
-    # 2. Must not use fixed height: 100vh on .landing-hero (to avoid content truncation on small screens/zoom)
+    # 2. Must use isolation and overflow hidden so seal never escapes
+    assert "isolation: isolate;" in hero_block, "Expected isolation: isolate on .landing-hero"
+    assert "overflow: hidden;" in hero_block, "Expected overflow: hidden on .landing-hero"
+
+    # 3. Must not use fixed height: 100vh on .landing-hero (to avoid content truncation on small screens/zoom)
     height_match = re.search(r"(?<!min-)(?<!max-)\bheight\s*:\s*100[s|d]?vh", hero_block)
     assert height_match is None, (
         f"Found forbidden fixed height in .landing-hero: {height_match.group(0)}"
     )
 
-    # 3. Seal generator must use createElementNS with standard SVG namespace
+    # 4. Seal generator must use createElementNS with standard SVG namespace
     seal_path = STATIC_DIR / "js" / "lib" / "seal.js"
     assert seal_path.exists(), "seal.js missing in static/js/lib/"
     seal_code = seal_path.read_text(encoding="utf-8")
     assert "createElementNS(" in seal_code and "http://www.w3.org/2000/svg" in seal_code, (
         "seal.js must construct SVG nodes using document.createElementNS with SVG namespace"
     )
+
+
+def test_opaque_header_and_page_shell_tokens():
+    """Verify header is solid opaque paper-colour token background and shared container rules."""
+    css_path = STATIC_DIR / "styles.css"
+    css_content = css_path.read_text(encoding="utf-8")
+
+    # Header must be opaque paper color
+    header_match = re.search(r"\.app-header\s*\{([^}]+)\}", css_content)
+    assert header_match is not None, "Could not find .app-header rule in styles.css"
+    assert "var(--color-paper)" in header_match.group(1), (
+        "Expected .app-header background-color: var(--color-paper)"
+    )
+
+    # Header must never be transparent on landing
+    assert "body.is-landing-route .app-header:not(.is-scrolled)" not in css_content, (
+        "Found forbidden transparent header override on landing route"
+    )
+
+
+def test_no_statutory_or_regional_market_data_in_static():
+    """Verify neither 'statutory' nor 'regional market data' appears anywhere in static/."""
+    for file_path in STATIC_DIR.rglob("*"):
+        if file_path.suffix in [".html", ".css", ".js"]:
+            content = file_path.read_text(encoding="utf-8").lower()
+            assert "statutory" not in content, f"Found forbidden 'statutory' in {file_path.name}"
+            assert "regional market data" not in content, (
+                f"Found forbidden 'regional market data' in {file_path.name}"
+            )
+
+
+def test_node_test_suites_pass():
+    """Run all Node.js unit tests and verify zero failures."""
+    import shutil
+    import subprocess
+
+    node_bin = shutil.which("node")
+    if not node_bin:
+        pytest.skip("Node.js binary not available in environment")
+
+    test_files = [
+        BASE_DIR / "tests" / "js" / "test_ics_router.mjs",
+        BASE_DIR / "tests" / "js" / "test_seal.mjs",
+        BASE_DIR / "tests" / "js" / "test_lifecycle.mjs",
+    ]
+
+    for tf in test_files:
+        assert tf.exists(), f"Test file {tf.name} missing"
+        res = subprocess.run([node_bin, str(tf)], capture_output=True, text=True)
+        assert res.returncode == 0, (
+            f"Node test suite {tf.name} failed:\nSTDOUT:\n{res.stdout}\nSTDERR:\n{res.stderr}"
+        )
