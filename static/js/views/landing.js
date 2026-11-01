@@ -98,7 +98,8 @@ export const landingView = {
     let currentDemoBudget = DEMO_PRESETS.wedding.budget_inr;
 
     // View Container
-    const view = h("div", { class: "landing-view-container" });
+    const view = h("div", { class: "landing-view-container", "data-view": "landing" });
+    this.rootEl = view;
 
     // -----------------------------------------------------------------
     // 1. Full-Window Edge-to-Edge Typographic Hero
@@ -141,16 +142,15 @@ export const landingView = {
         h(
           "div",
           { class: "hero-text-column" },
-          h("span", { class: "hero-kicker" }, "The Event Programme & Planning Ledger"),
           h(
             "h1",
             { id: "hero-headline", class: "hero-headline", tabindex: "-1" },
-            "Event Planning Run with Exact Math and Cultural Care"
+            "Plan the celebration. We'll handle the math."
           ),
           h(
             "p",
             { class: "hero-lead-promise" },
-            "A mathematically balanced rupee ledger, backwards-scheduled milestone run-of-show, statutory compliance checklists, and culturally tailored creative ideas for Indian celebrations."
+            "Budgets that add up, a timeline that works backwards from the big day, vendor checklists, and ideas with an Indian soul."
           ),
           h(
             "div",
@@ -200,13 +200,13 @@ export const landingView = {
           { class: "hero-doors-grid", role: "list", "aria-label": "Event Types Quick Select" },
           ...[
             { type: "wedding", title: "Wedding Celebration", lead: "3 to 6 months lead time", index: "01" },
-            { type: "birthday", title: "Milestone Birthday", lead: "3 to 4 weeks lead time", index: "02" },
+            { type: "birthday", title: "Birthday", lead: "3 to 4 weeks lead time", index: "02" },
             { type: "community", title: "Community Festival", lead: "1 to 2 months lead time", index: "03" },
           ].map((door) => {
             return h(
               "a",
               {
-                href: `#/plan?type=${door.type}`,
+                href: `#/plan/${door.type}`,
                 class: "hero-door-band",
                 role: "listitem",
                 tabindex: "0",
@@ -214,13 +214,13 @@ export const landingView = {
                 onclick: (e) => {
                   e.preventDefault();
                   setPreselectedEventType(door.type);
-                  ctx.navigate("#/plan");
+                  ctx.navigate(`#/plan/${door.type}`);
                 },
                 onkeydown: (e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
                     setPreselectedEventType(door.type);
-                    ctx.navigate("#/plan");
+                    ctx.navigate(`#/plan/${door.type}`);
                   }
                 },
               },
@@ -447,7 +447,7 @@ export const landingView = {
       h(
         "p",
         { class: "demo-disclaimer" },
-        "Figures are illustrative mathematical benchmarks based on regional market averages. Actual vendor quotations may vary by season and venue availability."
+        "Figures are illustrative planning estimates, not real quotes. Costs and rules vary by city, so verify details locally."
       )
     );
     view.appendChild(demoSection);
@@ -648,5 +648,6 @@ export const landingView = {
       this.activeAbortController.abort();
       this.activeAbortController = null;
     }
+    this.rootEl = null;
   },
 };

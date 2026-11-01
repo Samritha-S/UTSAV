@@ -41,7 +41,7 @@ export function renderTimelinePanel(timeline, isActive) {
   const totalTasks = timeline.total_tasks || (timeline.tasks || []).length;
   const crunchAdvice =
     timeline.crunch_summary ||
-    "Your celebration date is imminent. Non-essential decorative and optional milestones have been deprioritized to preserve focus on core statutory permits, caterer lock-in, and venue access.";
+    "Your celebration date is imminent. Non-essential decorative and optional milestones have been deprioritized to preserve focus on essential permits to verify locally, caterer lock-in, and venue access.";
 
   const panel = h(
     "section",
