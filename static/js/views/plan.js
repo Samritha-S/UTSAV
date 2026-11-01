@@ -57,7 +57,7 @@ export const planView = {
     this.currentStep = 1;
     this.isSubmitting = false;
 
-    const view = h("div", { class: "intake-view-container", "data-view": "plan" });
+    const view = h("div", { class: "intake-view-container narrow", "data-view": "plan" });
 
     // Header strip
     const header = h(
@@ -66,18 +66,18 @@ export const planView = {
       createKolamMotif("mark", 28, 28),
       h("h1", { class: "intake-headline", tabindex: "-1" }, "Tell us about the day"),
       h(
-        "p",
-        { id: "step-indicator-text", class: "step-indicator-deck", "aria-live": "polite" },
-        "Step 1 of 3: What are you celebrating"
-      ),
-      h(
         "div",
-        { class: "intake-quick-actions" },
+        { class: "step-indicator-row" },
+        h(
+          "p",
+          { id: "step-indicator-text", class: "step-indicator-deck", "aria-live": "polite" },
+          "Step 1 of 3: What are you celebrating"
+        ),
         h(
           "button",
           {
             type: "button",
-            class: "btn btn-outline btn-sm",
+            class: "btn-sample-plan",
             onclick: () => this.populateSamplePreset(),
           },
           "Try a sample plan"
@@ -107,7 +107,7 @@ export const planView = {
       h(
         "fieldset",
         { class: "form-fieldset" },
-        h("legend", { class: "fieldset-legend" }, "Celebration Category"),
+        h("legend", { class: "fieldset-legend" }, "Celebration category"),
         h(
           "div",
           { class: "radio-cards-grid" },
@@ -149,7 +149,7 @@ export const planView = {
         h(
           "div",
           { class: "form-group" },
-          h("label", { for: "event-date", class: "form-label" }, "Event Date"),
+          h("label", { for: "event-date", class: "form-label" }, "Event date"),
           h("input", {
             type: "date",
             id: "event-date",
@@ -168,7 +168,7 @@ export const planView = {
         h(
           "div",
           { class: "form-group" },
-          h("label", { for: "city", class: "form-label" }, "City / Region"),
+          h("label", { for: "city", class: "form-label" }, "City or region"),
           h("input", {
             type: "text",
             id: "city",
@@ -192,7 +192,7 @@ export const planView = {
       h(
         "div",
         { class: "step-nav-actions" },
-        h("span"),
+        h("span", { "aria-hidden": "true" }),
         h(
           "button",
           {
@@ -201,7 +201,7 @@ export const planView = {
             class: "btn btn-primary",
             onclick: () => this.goToStep(2),
           },
-          "Next: Guests & Budget →"
+          "Next: guests and budget →"
         )
       )
     );
@@ -219,7 +219,7 @@ export const planView = {
         h(
           "div",
           { class: "form-group" },
-          h("label", { for: "guest-count", class: "form-label" }, "Expected Guest Count"),
+          h("label", { for: "guest-count", class: "form-label" }, "Expected guests"),
           h("input", {
             type: "number",
             id: "guest-count",
@@ -242,7 +242,7 @@ export const planView = {
         h(
           "div",
           { class: "form-group" },
-          h("label", { for: "budget-inr", class: "form-label" }, "Total Allocated Budget (INR)"),
+          h("label", { for: "budget-inr", class: "form-label" }, "Total budget (INR)"),
           h("input", {
             type: "number",
             id: "budget-inr",
@@ -273,7 +273,7 @@ export const planView = {
       h(
         "div",
         { class: "form-group" },
-        h("label", { for: "city-tier", class: "form-label" }, "City Cost Tier"),
+        h("label", { for: "city-tier", class: "form-label" }, "City cost tier"),
         h(
           "select",
           {
@@ -301,7 +301,7 @@ export const planView = {
             "Tier 3 — Smaller district headquarters and towns (cost-effective local sourcing)"
           )
         ),
-        h("span", { id: "tier-hint", class: "field-hint" }, "Scales realistic category benchmarks to local market economics"),
+        h("span", { id: "tier-hint", class: "field-hint" }, "Adapts estimates to typical costs in your city"),
         h("span", { id: "tier-error", class: "field-error is-hidden", role: "alert" })
       ),
 
@@ -325,7 +325,7 @@ export const planView = {
             class: "btn btn-primary",
             onclick: () => this.goToStep(3),
           },
-          "Next: Preferences →"
+          "Next: details and preferences →"
         )
       )
     );
@@ -341,7 +341,7 @@ export const planView = {
       h(
         "div",
         { class: "form-group" },
-        h("label", { for: "venue-setting", class: "form-label" }, "Venue Setting"),
+        h("label", { for: "venue-setting", class: "form-label" }, "Venue setting"),
         h(
           "select",
           {
@@ -365,7 +365,7 @@ export const planView = {
       h(
         "fieldset",
         { class: "form-fieldset" },
-        h("legend", { class: "fieldset-legend" }, "Dietary Requirements"),
+        h("legend", { class: "fieldset-legend" }, "Dietary requirements"),
         h(
           "div",
           { class: "checkboxes-grid" },
@@ -410,7 +410,7 @@ export const planView = {
           id: "age-group-group",
           class: `form-group ${this.formData.event_type === "birthday" ? "" : "is-hidden"}`,
         },
-        h("label", { for: "age-group", class: "form-label" }, "Target Demographic (Birthday)"),
+        h("label", { for: "age-group", class: "form-label" }, "Target demographic (birthday)"),
         h(
           "select",
           {
@@ -434,7 +434,7 @@ export const planView = {
       h(
         "div",
         { class: "form-group" },
-        h("label", { for: "theme-notes", class: "form-label" }, "Theme Concept & Special Wishes (Optional)"),
+        h("label", { for: "theme-notes", class: "form-label" }, "Theme concept & special wishes (optional)"),
         h("textarea", {
           id: "theme-notes",
           name: "theme_notes",
@@ -478,7 +478,7 @@ export const planView = {
             class: "btn btn-primary btn-lg",
             onclick: () => this.submitPlan(ctx),
           },
-          "Generate Event Plan"
+          "Craft celebration programme →"
         )
       )
     );
