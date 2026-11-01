@@ -263,3 +263,36 @@ def test_js_contains_no_badge_or_pill_class_names():
             assert match is None, (
                 f"Forbidden badge/pill class name found in {js_path.name}:{idx} -> {line_strip}"
             )
+
+
+# ---------------------------------------------------------------------
+# 8. Full-Window Landing Hero Constraints
+# ---------------------------------------------------------------------
+def test_landing_hero_viewport_and_css_rules():
+    """Verify .landing-hero styling satisfies full-window layout constraints without fixed heights."""
+    css_path = STATIC_DIR / "styles.css"
+    css_content = css_path.read_text(encoding="utf-8")
+
+    # Locate the .landing-hero block
+    hero_block_match = re.search(r"\.landing-hero\s*\{([^}]+)\}", css_content)
+    assert hero_block_match is not None, "Could not find .landing-hero rule in styles.css"
+    hero_block = hero_block_match.group(1)
+
+    # 1. Must use min-height with modern viewport units to prevent clipping
+    assert "min-height: 100vh;" in hero_block, "Expected min-height: 100vh on .landing-hero"
+    assert "min-height: 100svh;" in hero_block, "Expected min-height: 100svh on .landing-hero"
+    assert "min-height: 100dvh;" in hero_block, "Expected min-height: 100dvh on .landing-hero"
+
+    # 2. Must not use fixed height: 100vh on .landing-hero (to avoid content truncation on small screens/zoom)
+    height_match = re.search(r"(?<!min-)(?<!max-)\bheight\s*:\s*100[s|d]?vh", hero_block)
+    assert height_match is None, (
+        f"Found forbidden fixed height in .landing-hero: {height_match.group(0)}"
+    )
+
+    # 3. Seal generator must use createElementNS with standard SVG namespace
+    seal_path = STATIC_DIR / "js" / "lib" / "seal.js"
+    assert seal_path.exists(), "seal.js missing in static/js/lib/"
+    seal_code = seal_path.read_text(encoding="utf-8")
+    assert "createElementNS(" in seal_code and "http://www.w3.org/2000/svg" in seal_code, (
+        "seal.js must construct SVG nodes using document.createElementNS with SVG namespace"
+    )
