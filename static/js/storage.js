@@ -310,3 +310,30 @@ export function clearAllEvents() {
     return false;
   }
 }
+
+/**
+ * Backward compatibility helpers for active session plan state
+ */
+export function loadPlanState() {
+  try {
+    if (!isStorageAvailable()) return null;
+    const raw = window.localStorage.getItem(LEGACY_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function savePlanState(data) {
+  try {
+    if (!isStorageAvailable()) return;
+    window.localStorage.setItem(LEGACY_STORAGE_KEY, JSON.stringify(data));
+  } catch {}
+}
+
+export function clearPlanState() {
+  try {
+    if (!isStorageAvailable()) return;
+    window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+  } catch {}
+}

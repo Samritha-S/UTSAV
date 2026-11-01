@@ -3,8 +3,12 @@
  *
  * Ruled typographic index of all saved celebratory programmes.
  * Features:
+ * - Strict view lifecycle: owns a single root element with data-view="events".
+ * - All actions update the view in place without full page duplication.
+ * - In-place delete confirmation: "Delete this event?" with "Yes, delete" and "Cancel",
+ *   Escape cancels, focus management, and aria-live announcements.
+ * - In-place rename and duplicate with button disabling during async/state updates.
  * - Ruled ledger entries displaying title, category, date, countdown, and checklist progress.
- * - Actions: Open (#/event/<id>), Rename (in-line prompt), Duplicate, and Delete with inline confirmation.
  * - Storage cap warning when 20 events are stored.
  * - Storage unavailable warning when localStorage is disabled or inaccessible.
  * - Warm, thoughtful empty state when zero events are saved.
@@ -47,13 +51,34 @@ function getCountdownText(dateStr) {
 }
 
 export const eventsView = {
-  confirmDeleteId: null,
+  rootEl: null,
+  ctx: null,
+  isDuplicating: false,
 
   mount(container, ctx) {
+    this.ctx = ctx;
     ctx.setTitle("My Saved Events");
     ctx.announce("My saved events index. Review, open, duplicate or delete your event programmes.");
 
-    const view = h("div", { class: "events-view-container" });
+    if (!this.rootEl) {
+      this.rootEl = h("div", { class: "events-view-container", "data-view": "events" });
+    }
+    this.render();
+
+    if (container.firstChild !== this.rootEl) {
+      container.replaceChildren(this.rootEl);
+    }
+  },
+
+  unmount() {
+    this.rootEl = null;
+    this.ctx = null;
+    this.isDuplicating = false;
+  },
+
+  render() {
+    if (!this.rootEl) return;
+    this.rootEl.replaceChildren();
 
     // Masthead
     const masthead = h(
@@ -67,7 +92,7 @@ export const eventsView = {
         "Your library of handcrafted event programmes, budgets, backwards-scheduled timelines, and creative shortlists."
       )
     );
-    view.appendChild(masthead);
+    this.rootEl.appendChild(masthead);
 
     // Storage Availability Notice
     if (!isStorageAvailable()) {
@@ -77,7 +102,7 @@ export const eventsView = {
         h("strong", {}, "Storage Unavailable: "),
         "Your browser storage is currently restricted. Any plans created during this session will not be remembered once this window closes."
       );
-      view.appendChild(storageNotice);
+      this.rootEl.appendChild(storageNotice);
     }
 
     const events = getAllEvents();
@@ -86,48 +111,20 @@ export const eventsView = {
     if (events.length >= MAX_SAVED_EVENTS) {
       const capNotice = h(
         "div",
-        { class: "info-notice-banner", role: "status" },
+        { id: "events-cap-banner", class: "info-notice-banner", role: "status" },
         h("strong", {}, "Storage Cap Reached: "),
         `You have saved ${events.length} of ${MAX_SAVED_EVENTS} maximum allowed programmes. Please delete an older celebration to create space for new plans.`
       );
-      view.appendChild(capNotice);
+      this.rootEl.appendChild(capNotice);
     }
 
-    // -----------------------------------------------------------------
     // Empty State
-    // -----------------------------------------------------------------
     if (events.length === 0) {
-      const emptyState = h(
-        "div",
-        { class: "events-empty-state" },
-        createKolamMotif("divider", 64, 16),
-        h("h2", { class: "empty-title" }, "No Saved Programmes Yet"),
-        h(
-          "p",
-          { class: "empty-desc" },
-          "When you design an event plan, it will be preserved here in your ledger with full budgets, timelines, and creative shortlists."
-        ),
-        h(
-          "a",
-          {
-            href: "#/plan",
-            class: "btn btn-primary",
-            onclick: (e) => {
-              e.preventDefault();
-              ctx.navigate("#/plan");
-            },
-          },
-          "Plan Your First Event →"
-        )
-      );
-      view.appendChild(emptyState);
-      container.appendChild(view);
+      this.rootEl.appendChild(this.buildEmptyState());
       return;
     }
 
-    // -----------------------------------------------------------------
     // Ruled Events Ledger Index
-    // -----------------------------------------------------------------
     const listCard = h("div", { class: "events-ledger-card" });
 
     // Table Header Row
@@ -142,156 +139,15 @@ export const eventsView = {
     listCard.appendChild(headerRow);
 
     const rowsContainer = h("div", { class: "events-index-rows", role: "list" });
-
     events.forEach((evt) => {
-      const totalTasks =
-        evt.plan?.checklist?.total_items ||
-        evt.plan?.checklist?.categories?.flatMap((c) => c.items || []).length ||
-        0;
-      const doneTasks = Array.isArray(evt.checkedItems) ? evt.checkedItems.length : 0;
-      const progressText = totalTasks > 0 ? `${doneTasks} of ${totalTasks} completed` : "—";
-      const countdown = getCountdownText(evt.formInputs?.event_date);
-      const eventType = humanLabel(evt.formInputs?.event_type || "");
-
-      const row = h(
-        "article",
-        { class: "event-index-row", role: "listitem" },
-        // Col 1: Title & Type
-        h(
-          "div",
-          { class: "col-title" },
-          h(
-            "a",
-            {
-              href: `#/event/${evt.id}`,
-              class: "event-row-title-link",
-              onclick: (e) => {
-                e.preventDefault();
-                ctx.navigate(`#/event/${evt.id}`);
-              },
-            },
-            evt.title || "Untitled Celebration"
-          ),
-          h(
-            "div",
-            { class: "event-row-meta" },
-            h("span", { class: "event-type-mark" }, eventType),
-            h("span", { class: "meta-sep" }, "·"),
-            h("span", { class: "event-countdown-deck" }, countdown)
-          )
-        ),
-
-        // Col 2: Date
-        h(
-          "div",
-          { class: "col-date" },
-          h("span", { class: "event-formatted-date" }, formatDate(evt.formInputs?.event_date)),
-          h("span", { class: "event-city-tag" }, evt.formInputs?.city || "")
-        ),
-
-        // Col 3: Checklist Progress
-        h(
-          "div",
-          { class: "col-progress" },
-          h("span", { class: "progress-counter-text" }, progressText)
-        ),
-
-        // Col 4: Action Buttons
-        h(
-          "div",
-          { class: "col-actions" },
-          // If this row is awaiting delete confirmation
-          this.confirmDeleteId === evt.id
-            ? h(
-                "div",
-                { class: "inline-confirm-group" },
-                h("span", { class: "confirm-prompt-text" }, "Delete?"),
-                h(
-                  "button",
-                  {
-                    type: "button",
-                    class: "btn btn-sm btn-danger",
-                    onclick: () => {
-                      deleteEvent(evt.id);
-                      this.confirmDeleteId = null;
-                      ctx.announce(`Deleted event: ${evt.title}`);
-                      this.mount(container, ctx);
-                    },
-                  },
-                  "Yes, Delete"
-                ),
-                h(
-                  "button",
-                  {
-                    type: "button",
-                    class: "btn btn-sm btn-outline",
-                    onclick: () => {
-                      this.confirmDeleteId = null;
-                      this.mount(container, ctx);
-                    },
-                  },
-                  "Cancel"
-                )
-              )
-            : h(
-                "div",
-                { class: "action-buttons-group" },
-                h(
-                  "button",
-                  {
-                    type: "button",
-                    class: "action-link-btn",
-                    onclick: () => {
-                      const newTitle = window.prompt("Rename celebration to:", evt.title);
-                      if (newTitle && newTitle.trim()) {
-                        renameEvent(evt.id, newTitle.trim());
-                        this.mount(container, ctx);
-                      }
-                    },
-                  },
-                  "Rename"
-                ),
-                h(
-                  "button",
-                  {
-                    type: "button",
-                    class: "action-link-btn",
-                    onclick: () => {
-                      const dup = duplicateEvent(evt.id);
-                      if (dup.ok) {
-                        ctx.announce(`Duplicated ${evt.title}`);
-                        this.mount(container, ctx);
-                      } else if (dup.error === "cap_reached") {
-                        window.alert(`Maximum ${MAX_SAVED_EVENTS} events reached. Please delete an older celebration first.`);
-                      }
-                    },
-                  },
-                  "Duplicate"
-                ),
-                h(
-                  "button",
-                  {
-                    type: "button",
-                    class: "action-link-btn text-danger",
-                    onclick: () => {
-                      this.confirmDeleteId = evt.id;
-                      this.mount(container, ctx);
-                    },
-                  },
-                  "Delete"
-                )
-              )
-        )
-      );
-
-      rowsContainer.appendChild(row);
+      rowsContainer.appendChild(this.buildEventRow(evt));
     });
 
     listCard.appendChild(rowsContainer);
-    view.appendChild(listCard);
+    this.rootEl.appendChild(listCard);
 
     // New Event Footer Link
-    view.appendChild(
+    this.rootEl.appendChild(
       h(
         "div",
         { class: "events-footer-action" },
@@ -302,18 +158,251 @@ export const eventsView = {
             class: "btn btn-primary",
             onclick: (e) => {
               e.preventDefault();
-              ctx.navigate("#/plan");
+              if (this.ctx) this.ctx.navigate("#/plan");
             },
           },
           "+ Plan Another Event"
         )
       )
     );
-
-    container.appendChild(view);
   },
 
-  unmount() {
-    this.confirmDeleteId = null;
+  buildEmptyState() {
+    return h(
+      "div",
+      { class: "events-empty-state" },
+      createKolamMotif("divider", 64, 16),
+      h("h2", { class: "empty-title", tabindex: "-1" }, "No Saved Programmes Yet"),
+      h(
+        "p",
+        { class: "empty-desc" },
+        "When you design an event plan, it will be preserved here in your ledger with full budgets, timelines, and creative shortlists."
+      ),
+      h(
+        "a",
+        {
+          href: "#/plan",
+          class: "btn btn-primary",
+          onclick: (e) => {
+            e.preventDefault();
+            if (this.ctx) this.ctx.navigate("#/plan");
+          },
+        },
+        "Plan Your First Event →"
+      )
+    );
+  },
+
+  buildEventRow(evt) {
+    const totalTasks =
+      evt.plan?.checklist?.total_items ||
+      evt.plan?.checklist?.categories?.flatMap((c) => c.items || []).length ||
+      0;
+    const doneTasks = Array.isArray(evt.checkedItems) ? evt.checkedItems.length : 0;
+    const progressText = totalTasks > 0 ? `${doneTasks} of ${totalTasks} completed` : "—";
+    const countdown = getCountdownText(evt.formInputs?.event_date);
+    const eventType = humanLabel(evt.formInputs?.event_type || "");
+
+    const row = h("article", { class: "event-index-row", role: "listitem", id: `event-row-${evt.id}` });
+
+    // Col 1: Title & Type
+    const titleLink = h(
+      "a",
+      {
+        href: `#/event/${evt.id}`,
+        class: "event-row-title-link",
+        onclick: (e) => {
+          e.preventDefault();
+          if (this.ctx) this.ctx.navigate(`#/event/${evt.id}`);
+        },
+      },
+      evt.title || "Untitled Celebration"
+    );
+
+    const colTitle = h(
+      "div",
+      { class: "col-title" },
+      titleLink,
+      h(
+        "div",
+        { class: "event-row-meta" },
+        h("span", { class: "event-type-mark" }, eventType),
+        h("span", { class: "meta-sep" }, "·"),
+        h("span", { class: "event-countdown-deck" }, countdown)
+      )
+    );
+
+    // Col 2: Date
+    const colDate = h(
+      "div",
+      { class: "col-date" },
+      h("span", { class: "event-formatted-date" }, formatDate(evt.formInputs?.event_date)),
+      h("span", { class: "event-city-tag" }, evt.formInputs?.city || "")
+    );
+
+    // Col 3: Checklist Progress
+    const colProgress = h(
+      "div",
+      { class: "col-progress" },
+      h("span", { class: "progress-counter-text" }, progressText)
+    );
+
+    // Col 4: Action Buttons
+    const colActions = h("div", { class: "col-actions" });
+    this.renderRowDefaultActions(colActions, evt, row, titleLink);
+
+    row.appendChild(colTitle);
+    row.appendChild(colDate);
+    row.appendChild(colProgress);
+    row.appendChild(colActions);
+
+    return row;
+  },
+
+  renderRowDefaultActions(actionsCell, evt, row, titleLink) {
+    actionsCell.replaceChildren();
+
+    const renameBtn = h(
+      "button",
+      {
+        type: "button",
+        class: "action-link-btn",
+        onclick: () => {
+          const currentTitle = evt.title || "Untitled Celebration";
+          const newTitle = window.prompt("Rename celebration to:", currentTitle);
+          if (newTitle && newTitle.trim() && newTitle.trim() !== currentTitle) {
+            const cleanTitle = newTitle.trim();
+            renameEvent(evt.id, cleanTitle);
+            evt.title = cleanTitle;
+            titleLink.textContent = cleanTitle;
+            if (this.ctx) this.ctx.announce(`Celebration renamed to: ${cleanTitle}`);
+          }
+        },
+      },
+      "Rename"
+    );
+
+    const dupBtn = h(
+      "button",
+      {
+        type: "button",
+        class: "action-link-btn",
+        onclick: () => {
+          if (this.isDuplicating) return;
+          this.isDuplicating = true;
+          dupBtn.disabled = true;
+
+          const dup = duplicateEvent(evt.id);
+          this.isDuplicating = false;
+          dupBtn.disabled = false;
+
+          if (dup.ok && dup.event) {
+            if (this.ctx) this.ctx.announce(`Duplicated ${evt.title}`);
+            this.render();
+          } else if (dup.error === "cap_reached") {
+            window.alert(`Maximum ${MAX_SAVED_EVENTS} events reached. Please delete an older celebration first.`);
+          }
+        },
+      },
+      "Duplicate"
+    );
+
+    const deleteBtn = h(
+      "button",
+      {
+        type: "button",
+        class: "action-link-btn text-danger",
+        onclick: () => {
+          this.renderRowConfirmDelete(actionsCell, evt, row, titleLink);
+        },
+      },
+      "Delete"
+    );
+
+    const actionsGroup = h("div", { class: "action-buttons-group" }, renameBtn, dupBtn, deleteBtn);
+    actionsCell.appendChild(actionsGroup);
+  },
+
+  renderRowConfirmDelete(actionsCell, evt, row, titleLink) {
+    actionsCell.replaceChildren();
+
+    const promptText = h("span", { class: "confirm-prompt-text" }, "Delete this event?");
+
+    const yesBtn = h(
+      "button",
+      {
+        type: "button",
+        class: "btn btn-sm btn-danger inline-confirm-btn",
+        onclick: () => {
+          yesBtn.disabled = true;
+          deleteEvent(evt.id);
+
+          if (this.ctx) {
+            this.ctx.announce("Event deleted");
+          }
+
+          // In-place row removal and focus management
+          const nextRow = row.nextElementSibling;
+          const prevRow = row.previousElementSibling;
+          row.remove();
+
+          const remainingRows = this.rootEl ? this.rootEl.querySelectorAll(".event-index-row") : [];
+          if (remainingRows.length === 0) {
+            this.render();
+            const emptyHeading = this.rootEl ? this.rootEl.querySelector(".empty-title") : null;
+            if (emptyHeading) emptyHeading.focus();
+          } else {
+            const capBanner = document.getElementById("events-cap-banner");
+            if (capBanner && remainingRows.length < MAX_SAVED_EVENTS) {
+              capBanner.remove();
+            }
+            const targetRow = nextRow || prevRow;
+            const targetBtn = targetRow ? targetRow.querySelector(".action-link-btn, .event-row-title-link") : null;
+            if (targetBtn) {
+              targetBtn.focus();
+            }
+          }
+        },
+      },
+      "Yes, delete"
+    );
+
+    const cancelBtn = h(
+      "button",
+      {
+        type: "button",
+        class: "btn btn-sm btn-outline inline-confirm-btn",
+        onclick: () => {
+          this.renderRowDefaultActions(actionsCell, evt, row, titleLink);
+          const delBtn = actionsCell.querySelector(".action-link-btn.text-danger");
+          if (delBtn) delBtn.focus();
+        },
+      },
+      "Cancel"
+    );
+
+    const confirmGroup = h(
+      "div",
+      {
+        class: "inline-confirm-group",
+        role: "group",
+        "aria-label": "Confirm event deletion",
+        onkeydown: (e) => {
+          if (e.key === "Escape") {
+            e.stopPropagation();
+            cancelBtn.click();
+          }
+        },
+      },
+      promptText,
+      yesBtn,
+      cancelBtn
+    );
+
+    actionsCell.appendChild(confirmGroup);
+    // Focus Cancel button when confirmation opens
+    requestAnimationFrame(() => {
+      cancelBtn.focus();
+    });
   },
 };
