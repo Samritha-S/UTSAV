@@ -22,7 +22,20 @@ from app.planner.data import (
 
 
 def compute_topological_ranks(templates: list[dict]) -> dict[str, int]:
-    """Compute dependency depth rank for stable chronological sequencing."""
+    """Compute dependency depth rank for stable chronological sequencing.
+
+    Performs a BFS/Kahn's-algorithm traversal over the task dependency graph
+    so that tasks with deeper prerequisite chains receive a higher rank.
+    Tasks sharing the same deadline are then secondarily sorted by this rank
+    to guarantee a dependency-respecting display order.
+
+    Args:
+        templates: Raw task template dicts, each containing an ``"id"`` key
+            and an optional ``"dependencies"`` list of prerequisite task IDs.
+
+    Returns:
+        Mapping of task ID → dependency depth rank (0 for root tasks).
+    """
     ranks: dict[str, int] = {t["id"]: 0 for t in templates}
     in_degrees: dict[str, int] = {t["id"]: len(t.get("dependencies", [])) for t in templates}
     adjacency: dict[str, list[str]] = {t["id"]: [] for t in templates}
@@ -162,6 +175,18 @@ def build_timeline(event: EventInput, today: date) -> TimelineSchedule:
 
 
 def generate_timeline(event: EventInput, today: date | None = None) -> TimelineSchedule:
-    """Public wrapper providing backward compatibility if today is omitted."""
+    """Public entry point: build a backwards-scheduled timeline, defaulting today to the system date.
+
+    This wrapper exists for backwards compatibility; callers that need
+    fully deterministic (clock-free) behaviour should call ``build_timeline``
+    directly with an explicit ``today`` argument.
+
+    Args:
+        event: Validated event input parameters.
+        today: Optional anchor date. Defaults to ``date.today()`` when omitted.
+
+    Returns:
+        TimelineSchedule containing chronologically sorted tasks.
+    """
     anchor_date = today or date.today()
     return build_timeline(event, anchor_date)

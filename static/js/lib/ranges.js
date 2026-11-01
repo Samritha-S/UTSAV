@@ -10,11 +10,19 @@
  * STRICT SECURITY: Pure computation & string formatting functions. No DOM access.
  */
 
+/** Minimum number of guests allowed for any event. */
 export const ALLOWED_GUESTS_MIN = 5;
+
+/** Maximum number of guests allowed for any event. */
 export const ALLOWED_GUESTS_MAX = 5000;
+
+/** Step increment size for the guest count slider. */
 export const GUESTS_STEP = 5;
 
+/** Minimum budget allowed in INR (₹5,000). */
 export const ALLOWED_BUDGET_MIN = 5000;
+
+/** Maximum budget allowed in INR (₹10 Crore / 100,000,000). */
 export const ALLOWED_BUDGET_MAX = 100000000; // 10 Crore
 
 /**
@@ -45,6 +53,7 @@ export function getBudgetStep(budgetInr) {
  * @param {"guests" | "budget"} type
  * @param {number} savedValue
  * @returns {{ min: number, max: number, step: number, savedValue: number }}
+ * @throws {Error} If an unsupported slider type is provided.
  */
 export function computeSliderRange(type, savedValue) {
   const val = Math.max(1, Number(savedValue) || 1);

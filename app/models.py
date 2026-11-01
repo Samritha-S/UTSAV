@@ -88,7 +88,18 @@ class ChecklistType(StrEnum):
 
 
 def sanitize_text(value: str) -> str:
-    """Strip control characters, excessive whitespace, and neutralize angle brackets to prevent XML delimiter tag breakout."""
+    """Strip control characters and neutralize angle brackets to prevent XML tag breakout.
+
+    Removes ASCII control characters (except newline and tab), escapes ``<``
+    and ``>`` as HTML entities, and collapses markdown code-block fences so
+    that user-supplied text cannot spoof XML delimiter tags or prompt context.
+
+    Args:
+        value: Raw user-supplied string to sanitize.
+
+    Returns:
+        Cleaned, stripped string safe for embedding inside prompt XML tags.
+    """
     if not value:
         return ""
     # Remove ASCII control characters except newline and tab

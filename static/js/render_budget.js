@@ -12,9 +12,20 @@ import { formatINR, formatINRWords, h, createKolamMotif } from "./utils.js";
 
 /**
  * Render the Budget Panel as an editorial ledger.
- * @param {Object} budget - BudgetBreakdown
- * @param {boolean} isActive
- * @returns {HTMLElement}
+ *
+ * Typesets the budget breakdown as a traditional shopkeeper's ledger with
+ * category rows, proportional rule bars, a contingency reserve row, and a
+ * grand total row that sums to the exact budget figure. Also renders the
+ * feasibility advisory section with any actionable suggestions.
+ *
+ * @param {Object} budget - BudgetBreakdown response object from the planner API.
+ * @param {Object[]} budget.categories - Array of BudgetCategory allocation objects.
+ * @param {number} budget.contingency_inr - Contingency reserve amount in INR.
+ * @param {number} budget.contingency_percentage - Contingency as a percentage of total.
+ * @param {number} budget.total_budget_inr - Total planned budget in INR.
+ * @param {Object} budget.feasibility - BudgetFeasibility assessment object.
+ * @param {boolean} isActive - Whether this panel should be visible (not hidden).
+ * @returns {HTMLElement} The fully rendered `<section>` panel element.
  */
 export function renderBudgetPanel(budget, isActive) {
   const panel = h(

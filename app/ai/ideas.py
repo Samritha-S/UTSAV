@@ -58,7 +58,19 @@ def _sanitize_creative_ideas(
     payload: GeminiCreativeIdeasPayload,
     event: EventInput,
 ) -> CreativeIdeas | None:
-    """Enforce list length caps, string limits, markdown/HTML stripping, and dietary safety."""
+    """Enforce list length caps, string limits, markdown/HTML stripping, and dietary safety.
+
+    Applies server-side guardrails to raw Gemini output so no unescaped
+    markdown, HTML, or out-of-diet menu items can reach the API response.
+
+    Args:
+        payload: Pydantic-validated raw Gemini output (without ``source`` field).
+        event: Validated event input, used for dietary preference filtering.
+
+    Returns:
+        Sanitized ``CreativeIdeas`` with ``source="ai"``, or ``None`` if the
+        output is rejected (e.g. all menu sections fail dietary filtering).
+    """
     # 1. Themes (max 4)
     sanitized_themes: list[ThemeIdea] = []
     for t in payload.themes[:4]:
@@ -136,7 +148,22 @@ def construct_user_prompt(
     budget: BudgetBreakdown,
     refinement: str | None = None,
 ) -> str:
-    """Build structured prompt passing budget allocations and safely delimited user text."""
+    """Build structured prompt passing budget allocations and safely delimited user text.
+
+    User-supplied text (theme notes and refinement prompt) is sanitized and
+    wrapped in XML tags so the system instruction can instruct the model to
+    treat them as passive data, mitigating prompt-injection risk.
+
+    Args:
+        event: Validated event input parameters.
+        budget: Calculated deterministic budget breakdown used to inject
+            per-category allocation figures into the prompt.
+        refinement: Optional natural-language refinement instruction from the
+            user (e.g. ``"more traditional Rajasthani folk music"``).
+
+    Returns:
+        Fully constructed prompt string ready to pass to the Gemini API.
+    """
     season = determine_seasonal_band(event.event_date, event.event_type)
 
     category_lines = []

@@ -214,7 +214,11 @@ def refine_ideas(request: RefineRequest) -> CreativeIdeas:
     tags=["Planner"],
 )
 def calculate_quick_budget(event: EventInput) -> QuickBudgetResponse:
-    """Quick deterministic budget calculation and feasibility assessment without generating timeline, checklist, or ideas."""
+    """Quick deterministic budget calculation and feasibility assessment.
+
+    Does not generate timeline, checklist, or creative ideas — use ``/api/plan``
+    for a complete plan.
+    """
     budget = allocate_budget(event)
     return QuickBudgetResponse(
         budget=budget,

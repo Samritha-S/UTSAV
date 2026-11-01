@@ -28,7 +28,19 @@ from app.planner.data import (
 
 
 def _convert_item_dict(raw: dict) -> ChecklistItem:
-    """Safely convert a raw dictionary into a typed ChecklistItem schema."""
+    """Safely convert a raw dictionary into a typed ChecklistItem schema.
+
+    Applies safe defaults for ``item_type`` (``"verify"``) and ``stage``
+    (``"confirm"``) when those keys are absent, and passes through optional
+    question and verification lists unchanged.
+
+    Args:
+        raw: Untyped checklist item dict from the data layer, containing at
+            minimum ``"id"`` and ``"text"`` keys.
+
+    Returns:
+        Validated ``ChecklistItem`` Pydantic model instance.
+    """
     return ChecklistItem(
         item_id=raw["id"],
         text=raw["text"],
@@ -44,6 +56,26 @@ def build_checklist(event: EventInput) -> VendorChecklist:
 
     Ensures 100% 1-to-1 category alignment with budget categories so the UI
     can join budget splits with actionable checklists.
+
+    The builder applies three layers of dynamic enrichment on top of the base
+    templates in order:
+
+    1. **Outdoor adaptations** — additional infrastructure and weather items
+       when the venue setting is outdoor or hybrid.
+    2. **Dietary adaptations** — Jain, vegan, halal, and other diet-specific
+       vendor verification items.
+    3. **Large gathering adaptations** — crowd management and volunteer
+       coordination items when guest count exceeds the threshold.
+
+    Categories with no matching template entries receive a standard fallback
+    item requesting written quotation and backup contact details.
+
+    Args:
+        event: Validated event input parameters.
+
+    Returns:
+        ``VendorChecklist`` with one ``ChecklistCategory`` per budget category,
+        each containing deduplicated, type-safe ``ChecklistItem`` entries.
     """
     event_key = event.event_type.value
     base_category_slugs = list(EVENT_BASE_ALLOCATIONS[event_key].keys())
@@ -127,5 +159,12 @@ def build_checklist(event: EventInput) -> VendorChecklist:
 
 
 def generate_checklist(event: EventInput) -> VendorChecklist:
-    """Public wrapper providing backward compatibility."""
+    """Public entry point for checklist generation, retained for backwards compatibility.
+
+    Args:
+        event: Validated event input parameters.
+
+    Returns:
+        ``VendorChecklist`` produced by ``build_checklist``.
+    """
     return build_checklist(event)

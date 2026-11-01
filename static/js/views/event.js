@@ -37,14 +37,33 @@ import {
 } from "../utils.js";
 
 export const eventView = {
+  /** @type {Object|null} Currently loaded event record from storage. */
   event: null,
+  /** @type {string} ID of the currently active tab. */
   activeTab: "tab-budget",
+  /** @type {number|null} Debounce timer ID for what-if recalculation. */
   whatifDebounceTimer: null,
+  /** @type {AbortController|null} In-flight fetch abort controller for what-if requests. */
   whatifAbortController: null,
+  /** @type {Map<string, Object>} LRU-style cache for what-if API results keyed by scenario. */
   whatifCache: new Map(),
+  /** @type {"this_week"|"all"|"pending"} Active checklist filter mode. */
   checklistFilter: "this_week", // "this_week" | "all" | "pending"
+  /** @type {boolean} True while a Gemini refinement request is in flight. */
   refining: false,
 
+  /**
+   * Mount the event programme view into the container element.
+   *
+   * Loads the event from local storage, validates that a plan exists, then
+   * builds and renders the full two-column programme layout including the
+   * editorial header, tab navigation, and all four panel sections.
+   *
+   * @param {HTMLElement} container - Root DOM node to render into.
+   * @param {Object} ctx - Router context object with `params`, `setTitle`,
+   *   `announce`, and `navigate` helpers.
+   * @returns {Promise<void>}
+   */
   async mount(container, ctx) {
     const eventId = ctx.params.id;
     const loadedEvent = getEventById(eventId);
@@ -309,9 +328,11 @@ export const eventView = {
     container.replaceChildren(view);
   },
 
-  // -------------------------------------------------------------------
-  // Tab Switching & Keyboard Navigation
-  // -------------------------------------------------------------------
+  /**
+   * Activate a tab by ID, updating aria attributes and panel visibility.
+   *
+   * @param {string} targetTabId - The `id` attribute of the tab button to activate.
+   */
   switchTab(targetTabId) {
     this.activeTab = targetTabId;
     const tabButtons = document.querySelectorAll(".programme-tab");
@@ -329,6 +350,11 @@ export const eventView = {
     });
   },
 
+  /**
+   * Handle keyboard navigation (ArrowLeft/Right, Home, End) within the tablist.
+   *
+   * @param {KeyboardEvent} e - The keydown event fired on a tab button.
+   */
   handleTabKeydown(e) {
     const tabs = Array.from(document.querySelectorAll(".programme-tab"));
     const currentIdx = tabs.indexOf(e.target);
@@ -354,6 +380,17 @@ export const eventView = {
   // -------------------------------------------------------------------
   // Component Builders: Budget Panel with "Try different numbers"
   // -------------------------------------------------------------------
+  /**
+   * Build the Budget tab panel including the ledger and what-if scenario simulator.
+   *
+   * @param {Object} currentBudget - Active BudgetBreakdown (may differ from saved plan
+   *   if the user has applied a what-if scenario).
+   * @param {Object} originalBudget - The original plan's BudgetBreakdown, used as the
+   *   reset target and tick-mark anchor.
+   * @param {Object} ev - Validated form inputs from the saved event.
+   * @param {Object} ctx - Router context with `announce` helper.
+   * @returns {HTMLElement} The rendered `<section>` panel element.
+   */
   buildBudgetPanel(currentBudget, originalBudget, ev, ctx) {
     let scenarioGuests = ev.guest_count;
     let scenarioBudgetInr = currentBudget.total_budget_inr;
@@ -722,6 +759,12 @@ export const eventView = {
     return panel;
   },
 
+  /**
+   * Render the ledger content block (header, category rows, contingency, total).
+   *
+   * @param {Object} budget - BudgetBreakdown to render.
+   * @returns {HTMLElement} Div containing the full ledger grid.
+   */
   renderLedgerContent(budget) {
     const root = h("div", { class: "ledger-rows-block" });
 
@@ -791,6 +834,14 @@ export const eventView = {
   // -------------------------------------------------------------------
   // Component Builders: Timeline with Calendar Export
   // -------------------------------------------------------------------
+  /**
+   * Build the Timeline tab panel with backwards-scheduled milestone cards and ICS export.
+   *
+   * @param {Object} timeline - TimelineSchedule from the plan response.
+   * @param {string} eventId - Stored event identifier used to name the .ics file.
+   * @param {string} eventTitle - Human-readable event title for the ICS calendar entry.
+   * @returns {HTMLElement} The rendered `<section>` panel element.
+   */
   buildTimelinePanel(timeline, eventId, eventTitle) {
     const panel = h(
       "section",
@@ -874,6 +925,14 @@ export const eventView = {
   // -------------------------------------------------------------------
   // Component Builders: Vendor Checklist with Focus Filter
   // -------------------------------------------------------------------
+  /**
+   * Build the Checklist tab panel with progress tracking and due-this-week filter.
+   *
+   * @param {Object} checklist - VendorChecklist from the plan response.
+   * @param {Object} timeline - TimelineSchedule used to classify items as due this week.
+   * @param {string[]|null} checkedArray - Array of item_id strings previously checked off.
+   * @returns {HTMLElement} The rendered `<section>` panel element.
+   */
   buildChecklistPanel(checklist, timeline, checkedArray) {
     const checkedSet = new Set(Array.isArray(checkedArray) ? checkedArray : []);
     const allItems = checklist.categories ? checklist.categories.flatMap((c) => c.items || []) : (checklist.items || []);
@@ -1018,6 +1077,16 @@ export const eventView = {
     return panel;
   },
 
+  /**
+   * Determine whether a checklist item's parent timeline task is due within 7 days.
+   *
+   * Falls back to `true` (show as due) when no matching timeline task is found,
+   * so that orphan checklist items are always visible in the "Do this week" filter.
+   *
+   * @param {Object} checklistItem - ChecklistItem with at least `category_slug` and `item_id`.
+   * @param {Object|null} timeline - TimelineSchedule, or null if unavailable.
+   * @returns {boolean} True if the associated task deadline is within 7 calendar days.
+   */
   isTaskDueThisWeek(checklistItem, timeline) {
     if (!timeline || !timeline.tasks) return true;
     const task = timeline.tasks.find((t) => t.category === checklistItem.category_slug || t.task_id === checklistItem.item_id);
@@ -1037,6 +1106,12 @@ export const eventView = {
     return (task.days_until_deadline !== undefined) ? task.days_until_deadline <= 7 : true;
   },
 
+  /**
+   * Switch the active checklist filter and re-apply row visibility.
+   *
+   * @param {"this_week"|"all"|"pending"} filterKey - The filter mode to activate.
+   * @param {HTMLElement|null} buttonEl - The button element that was clicked (for styling).
+   */
   setChecklistFilter(filterKey, buttonEl) {
     this.checklistFilter = filterKey;
     const buttons = document.querySelectorAll(".checklist-filter-buttons button");
@@ -1089,6 +1164,15 @@ export const eventView = {
   // -------------------------------------------------------------------
   // Component Builders: Creative Ideas with Shortlist
   // -------------------------------------------------------------------
+  /**
+   * Build the Ideas tab panel with theme cards, activities, and the refinement dock.
+   *
+   * @param {Object} ideas - CreativeIdeas from the plan response.
+   * @param {Object} ev - Validated form inputs from the saved event.
+   * @param {string[]|null} shortlistArray - Names of items the user has kept in their shortlist.
+   * @param {Object} ctx - Router context with `announce` helper.
+   * @returns {HTMLElement} The rendered `<section>` panel element.
+   */
   buildIdeasPanel(ideas, ev, shortlistArray, ctx) {
     const shortlistSet = new Set(Array.isArray(shortlistArray) ? shortlistArray : []);
 
@@ -1243,6 +1327,12 @@ export const eventView = {
     return panel;
   },
 
+  /**
+   * Render shortlist chip elements from the current shortlist set.
+   *
+   * @param {Set<string>} shortlistSet - Set of item names currently shortlisted.
+   * @returns {HTMLElement[]} Array of chip elements (or a single empty-state span).
+   */
   renderShortlistChips(shortlistSet) {
     if (shortlistSet.size === 0) {
       return [
@@ -1276,6 +1366,13 @@ export const eventView = {
     });
   },
 
+  /**
+   * Toggle an item's shortlist membership and sync to storage.
+   *
+   * @param {string} itemName - The display name used as the shortlist key.
+   * @param {HTMLElement|null} buttonEl - The Keep/Kept toggle button element.
+   * @param {Set<string>} shortlistSet - The mutable in-memory shortlist set.
+   */
   toggleShortlist(itemName, buttonEl, shortlistSet) {
     if (shortlistSet.has(itemName)) {
       shortlistSet.delete(itemName);
@@ -1296,6 +1393,11 @@ export const eventView = {
     this.refreshShortlistUI(shortlistSet);
   },
 
+  /**
+   * Rebuild all shortlist chip elements and sync toggle-button states.
+   *
+   * @param {Set<string>} shortlistSet - The current shortlist set after a toggle.
+   */
   refreshShortlistUI(shortlistSet) {
     const container = document.getElementById("shortlist-chips-container");
     if (!container) return;
@@ -1370,6 +1472,17 @@ export const eventView = {
   // -------------------------------------------------------------------
   // Helpers
   // -------------------------------------------------------------------
+  /**
+   * Calculate the number of days until (or since) a date string.
+   *
+   * Parses a ``YYYY-MM-DD`` date string using local timezone arithmetic to
+   * avoid UTC midnight shifts that would cause an off-by-one error on
+   * the day of the event.
+   *
+   * @param {string} dateStr - ISO 8601 date string in ``YYYY-MM-DD`` format.
+   * @returns {{ days: number, text: string }} Days difference (negative = past)
+   *   and a human-readable countdown phrase.
+   */
   computeCountdown(dateStr) {
     if (!dateStr) return { days: 0, text: "" };
     try {
@@ -1389,6 +1502,13 @@ export const eventView = {
     }
   },
 
+  /**
+   * Compose a one-sentence editorial summary of the event plan.
+   *
+   * @param {Object} ev - Validated form inputs from the saved event.
+   * @param {Object} budget - Active BudgetBreakdown for the event.
+   * @returns {string} Plain-text summary sentence.
+   */
   buildSummarySentence(ev, budget) {
     const type = humanLabel(ev.event_type || "celebration");
     const city = ev.city || "your city";
@@ -1398,6 +1518,12 @@ export const eventView = {
     return `A ${amount} ${setting.toLowerCase()} ${type.toLowerCase()} in ${city} for ${guests} with balanced category allocations.`;
   },
 
+  /**
+   * Format the budget feasibility verdict as a plain-English advisory sentence.
+   *
+   * @param {Object|null} feasibility - BudgetFeasibility object from the plan.
+   * @returns {string} Human-readable verdict sentence.
+   */
   formatFeasibilitySentence(feasibility) {
     if (!feasibility) return "Feasibility confirmed.";
     const verdicts = {
@@ -1408,6 +1534,12 @@ export const eventView = {
     return verdicts[feasibility.verdict] || feasibility.message || "Balanced planning allocation.";
   },
 
+  /**
+   * Build the most-urgent-action banner linking to the first overdue or critical task.
+   *
+   * @param {Object|null} timeline - TimelineSchedule from the plan, or null.
+   * @returns {HTMLElement|null} The banner element, or null if no tasks exist.
+   */
   renderMostUrgentAction(timeline) {
     if (!timeline || !timeline.tasks || timeline.tasks.length === 0) return null;
     const urgent = timeline.tasks.find((t) => t.status === "overdue_compressed") ||
@@ -1446,6 +1578,16 @@ export const eventView = {
     );
   },
 
+  /**
+   * Copy a plain-text plan summary to the clipboard using the Clipboard API.
+   *
+   * Falls back to a "Selected" label when the Clipboard API is unavailable
+   * (e.g. insecure context). Button label is temporarily updated to confirm
+   * the action.
+   *
+   * @param {HTMLElement|null} btnEl - The button that triggered the action.
+   * @returns {Promise<void>}
+   */
   async copySummaryToClipboard(btnEl) {
     if (!this.event) return;
     const ev = this.event.formInputs;
@@ -1484,6 +1626,10 @@ export const eventView = {
     }
   },
 
+  /**
+   * Unmount lifecycle hook: cancel pending timers and abort in-flight requests.
+   * Called by the router before navigating away from this view.
+   */
   unmount() {
     this.refining = false;
     if (this.whatifDebounceTimer) {

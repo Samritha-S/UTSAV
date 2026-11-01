@@ -39,7 +39,15 @@ from app.planner.data import (
 
 
 def get_guest_count_tier(guest_count: int) -> str:
-    """Classify guest count into standard operational planning tiers."""
+    """Classify guest count into standard operational planning tiers.
+
+    Args:
+        guest_count: Number of expected attendees.
+
+    Returns:
+        Tier label string (e.g. ``"intimate"``, ``"medium"``, ``"grand"``)
+        matching a key in ``GUEST_TIERS``.
+    """
     for tier, (low, high) in GUEST_TIERS.items():
         if low <= guest_count <= high:
             return tier
@@ -47,7 +55,16 @@ def get_guest_count_tier(guest_count: int) -> str:
 
 
 def determine_seasonal_band(event_date: date, event_type: EventType) -> str:
-    """Identify if the event falls in a peak wedding, festive, or off-season month."""
+    """Identify if the event falls in a peak wedding, festive, or off-season month.
+
+    Args:
+        event_date: Target date of the event.
+        event_type: Category of event (wedding, birthday, community).
+
+    Returns:
+        Season band string: ``"peak_wedding"``, ``"peak_festive"``,
+        ``"off_season"``, or ``"regular"``.
+    """
     month = event_date.month
     if event_type == EventType.WEDDING and month in PEAK_WEDDING_MONTHS:
         return "peak_wedding"
@@ -59,7 +76,18 @@ def determine_seasonal_band(event_date: date, event_type: EventType) -> str:
 
 
 def calculate_contingency_percentage(event: EventInput) -> float:
-    """Compute risk-adjusted contingency percentage bounded between 5% and 10%."""
+    """Compute risk-adjusted contingency percentage bounded between 5% and 10%.
+
+    Starts from the minimum 5% base and adds increments for outdoor venue
+    settings, peak seasons, and large guest counts (> 300), then clamps the
+    result to ``[CONTINGENCY_MIN_PCT, CONTINGENCY_MAX_PCT]``.
+
+    Args:
+        event: Validated event input parameters.
+
+    Returns:
+        Contingency percentage as a float (e.g. ``7.5`` for 7.5%).
+    """
     contingency = CONTINGENCY_MIN_PCT  # Base 5.0%
 
     # Outdoor events carry unpredictable weather and equipment risks
@@ -79,7 +107,19 @@ def calculate_contingency_percentage(event: EventInput) -> float:
 
 
 def compute_category_weights(event: EventInput) -> dict[str, float]:
-    """Calculate normalized category weights accounting for tier, season, guest scale, and diet."""
+    """Calculate normalized category weights accounting for tier, season, guest scale, and diet.
+
+    Applies multiplicative modifiers from city tier, peak seasonality, outdoor
+    venue setting, guest count tier, and dietary preferences on top of the
+    base allocation percentages. The resulting weights are renormalized so they
+    sum to exactly ``1.0``.
+
+    Args:
+        event: Validated event input parameters.
+
+    Returns:
+        Dictionary mapping category slug → normalized weight (values sum to 1.0).
+    """
     base_data = EVENT_BASE_ALLOCATIONS[event.event_type.value]
     adjusted_weights: dict[str, float] = {}
 
@@ -158,7 +198,15 @@ def distribute_budget_largest_remainder(
 
 
 def get_budget_floor(event_type: EventType, city_tier: CityTier) -> float:
-    """Calculate the realistic per-guest floor cost in INR for an event in a given city tier."""
+    """Calculate the realistic per-guest floor cost in INR for an event in a given city tier.
+
+    Args:
+        event_type: Category of event (wedding, birthday, community).
+        city_tier: City cost tier (metro, tier2, tier3).
+
+    Returns:
+        Minimum realistic spend per guest in INR as a float.
+    """
     base_floor = BASE_BUDGET_FLOORS_PER_GUEST_INR[event_type.value]
     multiplier = CITY_TIER_MULTIPLIERS[city_tier.value]
     return base_floor * multiplier
@@ -291,5 +339,12 @@ def allocate_budget(event: EventInput) -> BudgetBreakdown:
 
 
 def calculate_budget(event: EventInput) -> BudgetBreakdown:
-    """Alias for allocate_budget for backwards compatibility."""
+    """Alias for ``allocate_budget`` retained for backwards compatibility.
+
+    Args:
+        event: Validated event input parameters.
+
+    Returns:
+        Complete deterministic BudgetBreakdown for the event.
+    """
     return allocate_budget(event)
