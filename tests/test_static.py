@@ -484,3 +484,33 @@ def test_compact_vertical_rhythm_and_panel_padding():
     )
     for pad in intake_panel_matches:
         assert int(pad) <= 32, f"Expected intake panel padding <= 32px, found {pad}px"
+
+
+def test_ledger_and_sidebar_spec():
+    """Verify budget ledger uses CSS grid with named columns and sidebar has no nested scrolling."""
+    css_content = (STATIC_DIR / "styles.css").read_text(encoding="utf-8")
+
+    # 1. Ledger CSS uses named grid columns
+    assert "[name]" in css_content, "Expected named column [name] in styles.css"
+    assert "[amount]" in css_content, "Expected named column [amount] in styles.css"
+    assert "[share]" in css_content, "Expected named column [share] in styles.css"
+
+    # 2. Ledger amounts use tabular nums and white-space: nowrap
+    assert "white-space: nowrap" in css_content
+    assert "tabular-nums" in css_content
+
+    # 3. Sidebar CSS has no nested scrollbar
+    sidebar_blocks = re.findall(r"\.programme-sidebar\s*\{([^}]*)\}", css_content)
+    for block in sidebar_blocks:
+        assert "overflow-y: auto" not in block, "Sidebar must not have overflow-y: auto"
+        assert "overflow-y: scroll" not in block, "Sidebar must not have overflow-y: scroll"
+
+    # 4. Banned phrases absent from entire static directory
+    banned = ["Total Balanced Programme", "rounding delta", "Scenario Simulator", "Simulated"]
+    for path in STATIC_DIR.rglob("*"):
+        if path.is_file() and path.suffix in [".html", ".css", ".js", ".json"]:
+            text = path.read_text(encoding="utf-8")
+            for phrase in banned:
+                assert phrase not in text, (
+                    f"Found banned phrase '{phrase}' in {path.relative_to(STATIC_DIR)}"
+                )

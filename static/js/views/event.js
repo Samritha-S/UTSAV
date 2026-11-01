@@ -6,7 +6,7 @@
  * - Ruled two-column key figures presentation (no identical stat boxes).
  * - Feasibility verdict statement and single most urgent next action button.
  * - WAI-ARIA tab navigation: Budget, Timeline, Checklist, Ideas.
- * - Interactive "What if..." budget scenario simulator calling /api/budget live.
+ * - Interactive "Try different numbers" budget calculation calling /api/budget live.
  * - Timeline run-of-show with RFC 5545 "Add to Calendar" (.ics download).
  * - Vendor checklist with "Do this week" focus filter and quiet completion acknowledgements.
  * - Creative ideas with shortlist "Keep" / "Kept" toggle buttons and neutral re-generation.
@@ -18,6 +18,11 @@
 import { fetchBudget, createPlan, refinePlan } from "../api.js";
 import { getEventById, updateEvent } from "../storage.js";
 import { generateICS, downloadICS } from "../lib/ics.js";
+import {
+  computeSliderRange,
+  calculateTickPercentage,
+  formatIndianAriaValuetext,
+} from "../lib/ranges.js";
 import {
   formatINR,
   formatCompactINR,
@@ -114,110 +119,84 @@ export const eventView = {
 
     const layout = h("div", { class: "programme-two-column-layout" });
 
-    // LEFT Column: Breadcrumbs, Title + Accent Mark, Tear-off Countdown, Figures, Urgent Action, Toolbar
+    // LEFT Column: Breadcrumbs, Serif Title, Tear-off Countdown with Date, Single-Column Figures, Urgent Action, 2x2 Actions
     const sidebar = h(
       "aside",
       { class: "programme-sidebar", "aria-labelledby": "event-main-heading" },
       breadcrumb,
+      h("h1", { id: "event-main-heading", class: "sidebar-event-title", tabindex: "-1" }, this.event.title),
       h(
         "div",
-        { class: "programme-title-group" },
-        h("h1", { id: "event-main-heading", class: "event-headline", tabindex: "-1" }, this.event.title),
-        h("span", { class: "event-title-accent", "aria-hidden": "true" }, createKolamMotif("mark", 20, 20))
-      ),
-      h(
-        "div",
-        { class: "countdown-tear-off", "aria-label": `Countdown: ${countdownInfo.text}` },
-        h("span", { class: "countdown-num" }, countdownInfo.days > 0 ? String(countdownInfo.days) : (countdownInfo.days === 0 ? "0" : String(Math.abs(countdownInfo.days)))),
-        h("span", { class: "countdown-label" }, countdownInfo.days > 0 ? (countdownInfo.days === 1 ? "day to go" : "days to go") : (countdownInfo.days === 0 ? "today" : "days ago"))
-      ),
-      h("p", { class: "editorial-lead-sentence" }, summarySentence),
-
-      // Ruled Two-Column Key Figures List
-      h(
-        "div",
-        { class: "key-figures-two-column", "aria-label": "Key Programme Figures" },
-        // Left Column
+        { class: "sidebar-countdown-card", "aria-label": `Countdown: ${countdownInfo.text}` },
         h(
           "div",
-          { class: "figures-column" },
-          h(
-            "div",
-            { class: "figure-entry" },
-            h("span", { class: "fig-label" }, "Total Budget"),
-            h("span", { class: "fig-val table-amount" }, `${formatINR(budget.total_budget_inr)} ${formatINRWords(budget.total_budget_inr)}`)
-          ),
-          h(
-            "div",
-            { class: "figure-entry" },
-            h("span", { class: "fig-label" }, "Expected Guests"),
-            h("span", { class: "fig-val" }, pluralize(ev.guest_count, "guest"))
-          ),
-          h(
-            "div",
-            { class: "figure-entry" },
-            h("span", { class: "fig-label" }, "City / Tier"),
-            h("span", { class: "fig-val" }, `${ev.city} · ${humanLabel(ev.city_tier)}`)
-          ),
-          h(
-            "div",
-            { class: "figure-entry" },
-            h("span", { class: "fig-label" }, "Venue Setting"),
-            h("span", { class: "fig-val" }, humanLabel(ev.indoor_outdoor || ev.venue_setting || "indoor"))
-          )
+          { class: "countdown-tear-off" },
+          h("span", { class: "countdown-num" }, countdownInfo.days > 0 ? String(countdownInfo.days) : (countdownInfo.days === 0 ? "0" : String(Math.abs(countdownInfo.days)))),
+          h("span", { class: "countdown-label" }, countdownInfo.days > 0 ? (countdownInfo.days === 1 ? "day to go" : "days to go") : (countdownInfo.days === 0 ? "today" : "days ago"))
         ),
-
-        // Right Column
-        h(
-          "div",
-          { class: "figures-column" },
-          h(
-            "div",
-            { class: "figure-entry" },
-            h("span", { class: "fig-label" }, "Planned Per Guest"),
-            h("span", { class: "fig-val table-amount" }, `${formatINR(budget.cost_per_guest_inr)} (Floor: ${formatINR(budget.feasibility.floor_per_guest_inr)})`)
-          ),
-          h(
-            "div",
-            { class: "figure-entry" },
-            h("span", { class: "fig-label" }, "Contingency Cushion"),
-            h("span", { class: "fig-val table-amount" }, `${formatINR(budget.contingency_inr)} (${budget.contingency_percentage}%)`)
-          ),
-          h(
-            "div",
-            { class: "figure-entry" },
-            h("span", { class: "fig-label" }, "Celebration Date"),
-            h("span", { class: "fig-val" }, formatDate(ev.event_date))
-          ),
-          h(
-            "div",
-            { class: "figure-entry" },
-            h("span", { class: "fig-label" }, "Dietary Focus"),
-            h("span", { class: "fig-val" }, (ev.dietary_preferences || ["vegetarian"]).map(humanLabel).join(", "))
-          )
-        )
+        h("span", { class: "sidebar-countdown-date" }, formatDate(ev.event_date))
       ),
 
-      // Feasibility Verdict Statement
+      // Single-Column Key Figures Definition List
       h(
-        "div",
-        { class: "feasibility-statement-line" },
-        h("strong", {}, "Feasibility Assessment: "),
-        h("span", {}, this.formatFeasibilitySentence(budget.feasibility))
+        "dl",
+        { class: "sidebar-figures-dl", "aria-label": "Key celebration figures" },
+        h(
+          "div",
+          { class: "sidebar-dl-row" },
+          h("dt", { class: "sidebar-dl-term" }, "Guests"),
+          h("dd", { class: "sidebar-dl-def" }, pluralize(ev.guest_count, "guest"))
+        ),
+        h(
+          "div",
+          { class: "sidebar-dl-row" },
+          h("dt", { class: "sidebar-dl-term" }, "Total budget"),
+          h("dd", { class: "sidebar-dl-def font-tabular" }, formatINR(budget.total_budget_inr))
+        ),
+        h(
+          "div",
+          { class: "sidebar-dl-row" },
+          h("dt", { class: "sidebar-dl-term" }, "Per guest"),
+          h("dd", { class: "sidebar-dl-def font-tabular" }, formatINR(budget.cost_per_guest_inr))
+        ),
+        h(
+          "div",
+          { class: "sidebar-dl-row" },
+          h("dt", { class: "sidebar-dl-term" }, "Contingency"),
+          h("dd", { class: "sidebar-dl-def font-tabular" }, `${formatINR(budget.contingency_inr)} (${budget.contingency_percentage}%)`)
+        ),
+        h(
+          "div",
+          { class: "sidebar-dl-row" },
+          h("dt", { class: "sidebar-dl-term" }, "City"),
+          h("dd", { class: "sidebar-dl-def" }, `${ev.city} (${humanLabel(ev.city_tier)})`)
+        ),
+        h(
+          "div",
+          { class: "sidebar-dl-row" },
+          h("dt", { class: "sidebar-dl-term" }, "Venue"),
+          h("dd", { class: "sidebar-dl-def" }, humanLabel(ev.indoor_outdoor || ev.venue_setting || "indoor"))
+        ),
+        h(
+          "div",
+          { class: "sidebar-dl-row" },
+          h("dt", { class: "sidebar-dl-term" }, "Food"),
+          h("dd", { class: "sidebar-dl-def" }, (ev.dietary_preferences || ["vegetarian"]).map(humanLabel).join(", "))
+        )
       ),
 
       // Single Most Urgent Next Action
       this.renderMostUrgentAction(timeline),
 
-      // Toolbar
+      // 2x2 Equal Action Buttons Grid
       h(
         "div",
-        { class: "programme-toolbar no-print" },
+        { class: "sidebar-actions-grid no-print" },
         h(
           "a",
           {
             href: `#/plan/${ev.event_type || "wedding"}`,
-            class: "btn btn-outline btn-sm",
+            class: "btn btn-outline sidebar-action-btn",
             onclick: (e) => {
               e.preventDefault();
               ctx.navigate(`#/plan/${ev.event_type || "wedding"}`);
@@ -230,7 +209,7 @@ export const eventView = {
           {
             type: "button",
             id: "copy-summary-btn",
-            class: "btn btn-outline btn-sm",
+            class: "btn btn-outline sidebar-action-btn",
             onclick: (e) => this.copySummaryToClipboard(e.target),
           },
           "Copy summary"
@@ -239,7 +218,7 @@ export const eventView = {
           "button",
           {
             type: "button",
-            class: "btn btn-outline btn-sm",
+            class: "btn btn-outline sidebar-action-btn",
             onclick: () => window.print(),
           },
           "Print / PDF"
@@ -249,7 +228,7 @@ export const eventView = {
           {
             type: "button",
             id: "start-over-btn",
-            class: "btn btn-outline btn-sm",
+            class: "btn btn-outline sidebar-action-btn",
             onclick: () => {
               const confirmed = window.confirm("Start over? This will reset all checklist progress and scenario adjustments for this celebration.");
               if (confirmed) {
@@ -373,11 +352,14 @@ export const eventView = {
   },
 
   // -------------------------------------------------------------------
-  // Component Builders: Budget Panel with "What If..." Simulator
+  // Component Builders: Budget Panel with "Try different numbers"
   // -------------------------------------------------------------------
   buildBudgetPanel(currentBudget, originalBudget, ev, ctx) {
     let scenarioGuests = ev.guest_count;
     let scenarioBudgetInr = currentBudget.total_budget_inr;
+
+    const guestRange = computeSliderRange("guests", ev.guest_count);
+    const budgetRange = computeSliderRange("budget", originalBudget.total_budget_inr);
 
     const panel = h(
       "section",
@@ -396,151 +378,260 @@ export const eventView = {
         h("h2", { class: "panel-headline" }, "Budget allocation and spending ledger"),
         h("p", { class: "panel-deck" }, "Where every rupee goes. These are planning estimates, so treat them as a starting point."),
         h("hr", { class: "panel-divider-rule", "aria-hidden": "true" })
-      ),
+      )
+    );
 
-      // "What if..." Interactive Simulation Panel
+    // Guest Controls
+    const guestDisplay = h("span", { id: "whatif-guest-display", class: "what-if-field-display font-tabular" }, `${scenarioGuests} guests`);
+    const guestNumInput = h("input", {
+      type: "number",
+      id: "whatif-guests-input",
+      class: "whatif-number-input font-tabular",
+      min: String(guestRange.min),
+      max: String(guestRange.max),
+      step: String(guestRange.step),
+      value: String(scenarioGuests),
+      "aria-label": "Guests headcount",
+    });
+
+    const guestSlider = h("input", {
+      type: "range",
+      id: "whatif-guests-slider",
+      min: String(guestRange.min),
+      max: String(guestRange.max),
+      step: String(guestRange.step),
+      value: String(scenarioGuests),
+      "aria-valuenow": String(scenarioGuests),
+      "aria-valuetext": formatIndianAriaValuetext("guests", scenarioGuests),
+      class: "whatif-range-slider",
+    });
+
+    const guestTick = h(
+      "div",
+      { class: "whatif-plan-tick", "aria-hidden": "true" },
+      h("span", { class: "whatif-tick-line" }),
+      h("span", { class: "whatif-tick-text" }, "Your plan")
+    );
+    guestTick.style.left = `${calculateTickPercentage(guestRange.min, guestRange.max, guestRange.savedValue)}%`;
+
+    // Budget Controls
+    const budgetDisplay = h("span", { id: "whatif-budget-display", class: "what-if-field-display font-tabular" }, formatINR(scenarioBudgetInr));
+    const budgetNumInput = h("input", {
+      type: "number",
+      id: "whatif-budget-input",
+      class: "whatif-number-input font-tabular",
+      min: String(budgetRange.min),
+      max: String(budgetRange.max),
+      step: String(budgetRange.step),
+      value: String(scenarioBudgetInr),
+      "aria-label": "Total budget in rupees",
+    });
+
+    const budgetSlider = h("input", {
+      type: "range",
+      id: "whatif-budget-slider",
+      min: String(budgetRange.min),
+      max: String(budgetRange.max),
+      step: String(budgetRange.step),
+      value: String(scenarioBudgetInr),
+      "aria-valuenow": String(scenarioBudgetInr),
+      "aria-valuetext": formatIndianAriaValuetext("budget", scenarioBudgetInr),
+      class: "whatif-range-slider",
+    });
+
+    const budgetTick = h(
+      "div",
+      { class: "whatif-plan-tick", "aria-hidden": "true" },
+      h("span", { class: "whatif-tick-line" }),
+      h("span", { class: "whatif-tick-text" }, "Your plan")
+    );
+    budgetTick.style.left = `${calculateTickPercentage(budgetRange.min, budgetRange.max, budgetRange.savedValue)}%`;
+
+    // Connect Guest inputs
+    guestSlider.oninput = (e) => {
+      scenarioGuests = parseInt(e.target.value, 10);
+      guestNumInput.value = String(scenarioGuests);
+      guestDisplay.textContent = `${scenarioGuests} guests`;
+      guestSlider.setAttribute("aria-valuenow", String(scenarioGuests));
+      guestSlider.setAttribute("aria-valuetext", formatIndianAriaValuetext("guests", scenarioGuests));
+      debounceWhatIfCalculation();
+    };
+
+    guestNumInput.oninput = (e) => {
+      let val = parseInt(e.target.value, 10);
+      if (isNaN(val)) return;
+      if (val < guestRange.min) val = guestRange.min;
+      if (val > guestRange.max) val = guestRange.max;
+      scenarioGuests = val;
+      guestSlider.value = String(scenarioGuests);
+      guestDisplay.textContent = `${scenarioGuests} guests`;
+      guestSlider.setAttribute("aria-valuenow", String(scenarioGuests));
+      guestSlider.setAttribute("aria-valuetext", formatIndianAriaValuetext("guests", scenarioGuests));
+      debounceWhatIfCalculation();
+    };
+
+    // Connect Budget inputs
+    budgetSlider.oninput = (e) => {
+      scenarioBudgetInr = parseInt(e.target.value, 10);
+      budgetNumInput.value = String(scenarioBudgetInr);
+      budgetDisplay.textContent = formatINR(scenarioBudgetInr);
+      budgetSlider.setAttribute("aria-valuenow", String(scenarioBudgetInr));
+      budgetSlider.setAttribute("aria-valuetext", formatIndianAriaValuetext("budget", scenarioBudgetInr));
+      debounceWhatIfCalculation();
+    };
+
+    budgetNumInput.oninput = (e) => {
+      let val = parseInt(e.target.value, 10);
+      if (isNaN(val)) return;
+      if (val < budgetRange.min) val = budgetRange.min;
+      if (val > budgetRange.max) val = budgetRange.max;
+      scenarioBudgetInr = val;
+      budgetSlider.value = String(scenarioBudgetInr);
+      budgetDisplay.textContent = formatINR(scenarioBudgetInr);
+      budgetSlider.setAttribute("aria-valuenow", String(scenarioBudgetInr));
+      budgetSlider.setAttribute("aria-valuetext", formatIndianAriaValuetext("budget", scenarioBudgetInr));
+      debounceWhatIfCalculation();
+    };
+
+    const diffText = h("p", { id: "whatif-diff-text", class: "what-if-diff-sentence" }, "Matches your saved plan.");
+
+    // "Try different numbers" Card
+    const whatIfCard = h(
+      "div",
+      { class: "what-if-card" },
       h(
         "div",
-        { class: "what-if-card" },
+        { class: "what-if-header" },
+        h("h3", { class: "what-if-title" }, "Try different numbers"),
+        h("p", { class: "what-if-desc" }, "Drag the sliders to see how guests and budget change the split. Nothing is saved until you press Keep.")
+      ),
+      h(
+        "div",
+        { class: "what-if-controls-grid" },
+        // Guest Column
         h(
           "div",
-          { class: "what-if-header" },
-          h("h3", { class: "what-if-title" }, "What if… Scenario Simulator"),
-          h("p", { class: "what-if-desc" }, "Test live changes to attendee count and total expenditure. Changes do not alter your saved plan unless explicitly saved.")
-        ),
-        h(
-          "div",
-          { class: "what-if-controls-grid" },
-          // Guest Slider
+          { class: "what-if-col" },
           h(
             "div",
-            { class: "what-if-control" },
-            h(
-              "div",
-              { class: "control-label-row" },
-              h("label", { for: "whatif-guest-slider", class: "form-label" }, "Simulated Guest Headcount"),
-              h("span", { id: "whatif-guest-display", class: "whatif-metric-display" }, `${scenarioGuests} guests`)
-            ),
-            h("input", {
-              type: "range",
-              id: "whatif-guest-slider",
-              min: "10",
-              max: "1500",
-              step: "5",
-              value: String(scenarioGuests),
-              "aria-valuenow": String(scenarioGuests),
-              "aria-valuetext": `${scenarioGuests} guests`,
-              class: "range-slider",
-              oninput: (e) => {
-                scenarioGuests = parseInt(e.target.value, 10);
-                const disp = document.getElementById("whatif-guest-display");
-                if (disp) disp.textContent = `${scenarioGuests} guests`;
-                e.target.setAttribute("aria-valuenow", String(scenarioGuests));
-                e.target.setAttribute("aria-valuetext", `${scenarioGuests} guests`);
-                debounceWhatIfCalculation();
-              },
-            })
+            { class: "what-if-field-header" },
+            h("label", { for: "whatif-guests-slider", class: "what-if-field-label" }, "Guests"),
+            guestDisplay
           ),
-
-          // Budget Slider
           h(
             "div",
-            { class: "what-if-control" },
+            { class: "what-if-input-row" },
             h(
               "div",
-              { class: "control-label-row" },
-              h("label", { for: "whatif-budget-input", class: "form-label" }, "Simulated Budget (INR)"),
-              h("span", { id: "whatif-budget-display", class: "whatif-metric-display" }, `${formatINR(scenarioBudgetInr)} ${formatINRWords(scenarioBudgetInr)}`)
+              { class: "what-if-slider-track-wrap" },
+              guestSlider,
+              guestTick
             ),
-            h("input", {
-              type: "range",
-              id: "whatif-budget-input",
-              min: "25000",
-              max: "20000000",
-              step: "25000",
-              value: String(scenarioBudgetInr),
-              "aria-valuenow": String(scenarioBudgetInr),
-              "aria-valuetext": formatINR(scenarioBudgetInr),
-              class: "range-slider",
-              oninput: (e) => {
-                scenarioBudgetInr = parseInt(e.target.value, 10);
-                const disp = document.getElementById("whatif-budget-display");
-                if (disp) disp.textContent = `${formatINR(scenarioBudgetInr)} ${formatINRWords(scenarioBudgetInr)}`;
-                e.target.setAttribute("aria-valuenow", String(scenarioBudgetInr));
-                e.target.setAttribute("aria-valuetext", formatINR(scenarioBudgetInr));
-                debounceWhatIfCalculation();
-              },
-            })
+            guestNumInput
           )
         ),
 
-        // Live Scenario Comparison & Action Strip
+        // Budget Column
         h(
           "div",
-          { class: "what-if-diff-strip" },
-          h("div", { id: "whatif-diff-text", class: "whatif-diff-message" }, "Drag sliders above to simulate changes against your saved plan."),
+          { class: "what-if-col" },
           h(
             "div",
-            { class: "what-if-actions" },
+            { class: "what-if-field-header" },
+            h("label", { for: "whatif-budget-slider", class: "what-if-field-label" }, "Total budget"),
+            budgetDisplay
+          ),
+          h(
+            "div",
+            { class: "what-if-input-row" },
             h(
-              "button",
-              {
-                type: "button",
-                id: "whatif-save-scenario-btn",
-                class: "btn btn-outline btn-xs",
-                onclick: () => {
-                  updateEvent(this.event.id, {
-                    scenarioBudget: currentBudget,
-                  });
-                  this.event.scenarioBudget = currentBudget;
-                  const diffMsg = document.getElementById("whatif-diff-text");
-                  if (diffMsg) {
-                    diffMsg.textContent = "Scenario numbers saved as the active ledger balance for this celebration.";
-                  }
-                  if (ctx) ctx.announce("Scenario budget numbers saved.");
-                },
-              },
-              "Keep these numbers"
+              "div",
+              { class: "what-if-slider-track-wrap" },
+              budgetSlider,
+              budgetTick
             ),
-            h(
-              "button",
-              {
-                type: "button",
-                id: "whatif-reset-btn",
-                class: "btn btn-text btn-xs",
-                onclick: () => {
-                  updateEvent(this.event.id, { scenarioBudget: null });
-                  this.event.scenarioBudget = null;
-                  const guestSlider = document.getElementById("whatif-guests-slider");
-                  const budgetSlider = document.getElementById("whatif-budget-slider");
-                  if (guestSlider) {
-                    guestSlider.value = String(ev.guest_count);
-                    guestSlider.dispatchEvent(new Event("input"));
-                  }
-                  if (budgetSlider) {
-                    budgetSlider.value = String(plan.budget.total_budget_inr);
-                    budgetSlider.dispatchEvent(new Event("input"));
-                  }
-                  const diffMsg = document.getElementById("whatif-diff-text");
-                  if (diffMsg) {
-                    diffMsg.textContent = "Reset to original plan allocation.";
-                  }
-                  if (ctx) ctx.announce("Reset budget to original plan.");
-                },
-              },
-              "Reset to original"
-            )
+            budgetNumInput
           )
         )
       ),
 
-      // Ledger Card
+      // Plain language difference sentence
+      diffText,
+
+      // Action row below sliders
       h(
         "div",
-        { id: "active-ledger-container", class: "ledger-card" },
-        this.renderLedgerContent(currentBudget)
-      )
+        { class: "what-if-actions-row" },
+        h(
+          "button",
+          {
+            type: "button",
+            id: "whatif-save-scenario-btn",
+            class: "btn btn-primary btn-sm",
+            onclick: () => {
+              updateEvent(this.event.id, {
+                scenarioBudget: currentBudget,
+              });
+              this.event.scenarioBudget = currentBudget;
+              const diffMsg = document.getElementById("whatif-diff-text");
+              if (diffMsg) {
+                diffMsg.textContent = "Saved as the active ledger balance for this celebration.";
+              }
+              if (ctx) ctx.announce("Saved new numbers to plan.");
+            },
+          },
+          "Keep these numbers"
+        ),
+        h(
+          "button",
+          {
+            type: "button",
+            id: "whatif-reset-btn",
+            class: "btn btn-text btn-sm",
+            onclick: () => {
+              updateEvent(this.event.id, { scenarioBudget: null });
+              this.event.scenarioBudget = null;
+              scenarioGuests = ev.guest_count;
+              scenarioBudgetInr = originalBudget.total_budget_inr;
+
+              guestSlider.value = String(scenarioGuests);
+              guestNumInput.value = String(scenarioGuests);
+              guestDisplay.textContent = `${scenarioGuests} guests`;
+
+              budgetSlider.value = String(scenarioBudgetInr);
+              budgetNumInput.value = String(scenarioBudgetInr);
+              budgetDisplay.textContent = formatINR(scenarioBudgetInr);
+
+              currentBudget = originalBudget;
+              const ledgerBox = document.getElementById("active-ledger-container");
+              if (ledgerBox) {
+                ledgerBox.replaceChildren(this.renderLedgerContent(currentBudget));
+              }
+
+              const diffMsg = document.getElementById("whatif-diff-text");
+              if (diffMsg) {
+                diffMsg.textContent = "Matches your saved plan.";
+              }
+              if (ctx) ctx.announce("Reset budget to original plan.");
+            },
+          },
+          "Reset to original"
+        )
+      ),
+
+      // Polite screen reader live announcer
+      h("div", { id: "whatif-live-announcer", class: "sr-only", "aria-live": "polite", "aria-atomic": "true" })
     );
+
+    panel.appendChild(whatIfCard);
+
+    // Ledger Card Container
+    const ledgerCard = h(
+      "div",
+      { id: "active-ledger-container", class: "ledger-card" },
+      this.renderLedgerContent(currentBudget)
+    );
+    panel.appendChild(ledgerCard);
 
     const debounceWhatIfCalculation = () => {
       if (this.whatifDebounceTimer) clearTimeout(this.whatifDebounceTimer);
@@ -556,6 +647,12 @@ export const eventView = {
           indoor_outdoor: ev.indoor_outdoor || ev.venue_setting || "indoor",
         };
         const cacheKey = `${payload.event_type}-${payload.guest_count}-${payload.budget_inr}-${payload.city_tier}`;
+
+        // Announce politely
+        const announcer = document.getElementById("whatif-live-announcer");
+        if (announcer) {
+          announcer.textContent = `Calculating allocation for ${formatIndianAriaValuetext("guests", scenarioGuests)} and ${formatIndianAriaValuetext("budget", scenarioBudgetInr)}`;
+        }
 
         if (this.whatifCache.has(cacheKey)) {
           applyScenarioResult(this.whatifCache.get(cacheKey));
@@ -583,25 +680,42 @@ export const eventView = {
       // Update ledger container
       const ledgerBox = document.getElementById("active-ledger-container");
       if (ledgerBox) {
-        while (ledgerBox.firstChild) ledgerBox.removeChild(ledgerBox.firstChild);
-        ledgerBox.appendChild(this.renderLedgerContent(currentBudget));
+        ledgerBox.replaceChildren(this.renderLedgerContent(currentBudget));
       }
 
-      // Calculate plain text diff message
+      // Calculate plain language diff sentence
       const diffInr = currentBudget.total_budget_inr - originalBudget.total_budget_inr;
       const diffGuests = scenarioGuests - ev.guest_count;
+
+      let maxDiffCat = null;
+      let maxDiffVal = 0;
+      if (currentBudget.categories && originalBudget.categories) {
+        currentBudget.categories.forEach((cat) => {
+          const orig = originalBudget.categories.find((c) => c.category_slug === cat.category_slug);
+          if (orig) {
+            const delta = cat.allocated_inr - orig.allocated_inr;
+            if (Math.abs(delta) > Math.abs(maxDiffVal)) {
+              maxDiffVal = delta;
+              maxDiffCat = cat.name;
+            }
+          }
+        });
+      }
+
       const diffTextEl = document.getElementById("whatif-diff-text");
       if (diffTextEl) {
-        const parts = [];
-        if (diffInr !== 0) {
-          const direction = diffInr > 0 ? "more" : "less";
-          parts.push(`${formatINR(Math.abs(diffInr))} ${direction} total budget`);
-        }
-        if (diffGuests !== 0) {
+        if (maxDiffCat && maxDiffVal !== 0) {
+          const dir = maxDiffVal > 0 ? "more" : "less";
+          diffTextEl.textContent = `That's ${formatINR(Math.abs(maxDiffVal))} ${dir} on ${maxDiffCat.toLowerCase()} than your plan.`;
+        } else if (diffInr !== 0) {
+          const dir = diffInr > 0 ? "more" : "less";
+          diffTextEl.textContent = `That's ${formatINR(Math.abs(diffInr))} ${dir} overall than your plan.`;
+        } else if (diffGuests !== 0) {
           const gDir = diffGuests > 0 ? "more" : "fewer";
-          parts.push(`${Math.abs(diffGuests)} ${gDir} guests`);
+          diffTextEl.textContent = `That's ${Math.abs(diffGuests)} ${gDir} guests than your plan.`;
+        } else {
+          diffTextEl.textContent = "Matches your saved plan.";
         }
-        diffTextEl.textContent = parts.length > 0 ? `Scenario difference: ${parts.join(", ")} than your plan.` : "Matching your saved plan.";
       }
     };
 
@@ -611,84 +725,68 @@ export const eventView = {
   renderLedgerContent(budget) {
     const root = h("div", { class: "ledger-rows-block" });
 
-    // Table Header
+    // Table Header Row: Category | Amount | Share
     root.appendChild(
       h(
         "div",
-        { class: "ledger-header-row" },
-        h("span", { class: "ledger-col-head" }, "Expenditure Head"),
-        h("span", { class: "ledger-col-head text-right" }, "Allocated (INR)")
+        { class: "ledger-grid-header", role: "row" },
+        h("span", { class: "ledger-head-name", role: "columnheader" }, "Category"),
+        h("span", { class: "ledger-head-amount", role: "columnheader" }, "Amount"),
+        h("span", { class: "ledger-head-share", role: "columnheader" }, "Share")
       )
     );
 
-    // Categories
-    const rowsContainer = h("div", { class: "ledger-entries-list" });
+    // Categories List
+    const rowsContainer = h("div", { class: "ledger-entries-list", role: "rowgroup" });
     budget.categories.forEach((cat) => {
-      rowsContainer.appendChild(
-        h(
-          "div",
-          { class: "ledger-entry" },
-          h(
-            "div",
-            { class: "ledger-title-line" },
-            h("span", { class: "ledger-cat-name" }, cat.name),
-            h("span", { class: "ledger-dots", "aria-hidden": "true" }),
-            h("span", { class: "ledger-amount" }, formatINR(cat.allocated_inr)),
-            h("span", { class: "ledger-pct" }, `${cat.percentage.toFixed(1)}%`)
-          ),
-          h(
-            "div",
-            { class: "ledger-bar-track", "aria-hidden": "true" },
-            h("div", {
-              class: "ledger-bar-fill",
-              style: { width: `${Math.min(cat.percentage, 100)}%` },
-            })
-          ),
-          cat.description ? h("p", { class: "ledger-cat-desc" }, cat.description) : null
-        )
+      const barFill = h("div", { class: "ledger-bar-fill" });
+      barFill.style.width = `${Math.min(100, Math.max(2, cat.percentage))}%`;
+
+      const row = h(
+        "div",
+        { class: "ledger-grid-row", role: "row" },
+        h("span", { class: "ledger-row-name" }, cat.name),
+        h("span", { class: "ledger-row-amount font-tabular" }, formatINR(cat.allocated_inr)),
+        h("span", { class: "ledger-row-share font-tabular" }, `${cat.percentage.toFixed(1)}%`),
+        cat.description ? h("p", { class: "ledger-row-desc" }, cat.description) : null,
+        h("div", { class: "ledger-bar-track", "aria-hidden": "true" }, barFill)
       );
+      rowsContainer.appendChild(row);
     });
     root.appendChild(rowsContainer);
 
-    // Contingency
-    root.appendChild(
-      h(
-        "div",
-        { class: "ledger-entry contingency-entry" },
-        h(
-          "div",
-          { class: "ledger-title-line" },
-          h("span", { class: "ledger-cat-name" }, "Reserved Contingency Cushion"),
-          h("span", { class: "ledger-dots", "aria-hidden": "true" }),
-          h("span", { class: "ledger-amount" }, formatINR(budget.contingency_inr)),
-          h("span", { class: "ledger-pct" }, `${budget.contingency_percentage}%`)
-        ),
-        h(
-          "div",
-          { class: "ledger-bar-track", "aria-hidden": "true" },
-          h("div", {
-            class: "ledger-bar-fill contingency-bar-fill",
-            style: { width: `${Math.min(budget.contingency_percentage, 100)}%` },
-          })
-        ),
-        h("p", { class: "ledger-cat-desc" }, "Unallocated safety buffer reserved strictly for unexpected logistical contingencies.")
-      )
-    );
+    // Contingency reserve Row (separated by single rule)
+    const contingencyBarFill = h("div", { class: "ledger-bar-fill contingency-bar-fill" });
+    contingencyBarFill.style.width = `${Math.min(100, Math.max(2, budget.contingency_percentage))}%`;
 
-    // Ruled Grand Total
-    root.appendChild(
+    const contingencyRow = h(
+      "div",
+      { class: "ledger-grid-row ledger-contingency-row", role: "row" },
+      h("span", { class: "ledger-row-name" }, "Contingency reserve"),
+      h("span", { class: "ledger-row-amount font-tabular" }, formatINR(budget.contingency_inr)),
+      h("span", { class: "ledger-row-share font-tabular" }, `${budget.contingency_percentage}%`),
+      h("p", { class: "ledger-row-desc" }, "Reserved for unexpected logistical contingencies and weather mitigations."),
+      h("div", { class: "ledger-bar-track", "aria-hidden": "true" }, contingencyBarFill)
+    );
+    root.appendChild(contingencyRow);
+
+    // Total Row (heavier double rule above)
+    const totalRow = h(
+      "div",
+      { class: "ledger-total-row", role: "row" },
       h(
         "div",
-        { class: "ledger-total-strip" },
-        h("div", { class: "total-label-block" },
-          h("span", { class: "total-main-label" }, "Total Balanced Programme"),
-          h("span", { class: "total-audit-note" }, "Exact rupee balance verified — 0 rounding delta")
-        ),
-        h("span", { class: "total-main-amount" }, formatINR(budget.total_budget_inr))
-      )
+        { class: "ledger-total-label-cell" },
+        h("span", { class: "ledger-total-name" }, "Total"),
+        h("span", { class: "ledger-total-note" }, "Adds up to your budget, to the rupee.")
+      ),
+      h("span", { class: "ledger-total-amount font-tabular" }, formatINR(budget.total_budget_inr)),
+      h("span", { class: "ledger-total-share font-tabular" }, "100%")
     );
+    root.appendChild(totalRow);
 
     return root;
+  },
   },
 
   // -------------------------------------------------------------------

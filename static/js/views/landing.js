@@ -623,7 +623,7 @@ export const landingView = {
       const totalRow = h(
         "div",
         { class: "demo-ledger-total-row" },
-        h("span", { class: "demo-total-label" }, "Total Balanced Programme"),
+        h("span", { class: "demo-total-label" }, "Total"),
         h("span", { class: "demo-total-amount" }, formatINR(budget.total_budget_inr))
       );
       rowsContainer.appendChild(totalRow);

@@ -44,90 +44,64 @@ export function renderBudgetPanel(budget, isActive) {
       { class: "ledger-card" },
       h(
         "div",
-        { class: "ledger-header-row" },
-        h("span", { class: "ledger-col-head" }, "Expenditure Head"),
-        h("span", { class: "ledger-col-head text-right" }, "Allocated (INR)")
+        { class: "ledger-grid-header", role: "row" },
+        h("span", { class: "ledger-head-name", role: "columnheader" }, "Category"),
+        h("span", { class: "ledger-head-amount", role: "columnheader" }, "Amount"),
+        h("span", { class: "ledger-head-share", role: "columnheader" }, "Share")
       ),
 
       // Category Rows
       h(
         "div",
-        { class: "ledger-rows" },
+        { class: "ledger-entries-list", role: "rowgroup" },
         ...budget.categories.map((cat) => {
+          const barFill = h("div", { class: "ledger-bar-fill" });
+          barFill.style.width = `${Math.min(100, Math.max(2, cat.percentage))}%`;
+
           return h(
             "div",
-            { class: "ledger-entry" },
-            h(
-              "div",
-              { class: "ledger-entry-main" },
-              h("span", { class: "ledger-name" }, cat.name),
-              h("span", { class: "ledger-dots", "aria-hidden": "true" }),
-              h("span", { class: "ledger-amount" }, formatINR(cat.allocated_inr))
-            ),
-            h(
-              "div",
-              { class: "ledger-entry-sub" },
-              h(
-                "span",
-                { class: "ledger-meta" },
-                cat.cost_per_guest_inr
-                  ? `${cat.percentage}% of total · ${formatINR(cat.cost_per_guest_inr)} per guest`
-                  : `${cat.percentage}% of total`
-              ),
-              h("div", { class: "ledger-bar-track", "aria-hidden": "true" },
-                h("div", {
-                  class: "ledger-bar-fill",
-                  style: { width: `${Math.max(2, Math.min(100, cat.percentage * 2.5))}%` },
-                })
-              )
-            )
+            { class: "ledger-grid-row", role: "row" },
+            h("span", { class: "ledger-row-name" }, cat.name),
+            h("span", { class: "ledger-row-amount font-tabular" }, formatINR(cat.allocated_inr)),
+            h("span", { class: "ledger-row-share font-tabular" }, `${cat.percentage.toFixed(1)}%`),
+            cat.description
+              ? h("p", { class: "ledger-row-desc" }, cat.description)
+              : (cat.cost_per_guest_inr
+                  ? h("p", { class: "ledger-row-desc" }, `${cat.percentage}% of total · ${formatINR(cat.cost_per_guest_inr)} per guest`)
+                  : null),
+            h("div", { class: "ledger-bar-track", "aria-hidden": "true" }, barFill)
           );
         })
       ),
 
-      // Single rule separator before contingency
-      h("div", { class: "ledger-divider-single" }),
-
       // Contingency row
-      h(
-        "div",
-        { class: "ledger-entry ledger-contingency-entry" },
-        h(
-          "div",
-          { class: "ledger-entry-main" },
-          h("span", { class: "ledger-name" }, "Contingency & Reserve Cushion"),
-          h("span", { class: "ledger-dots", "aria-hidden": "true" }),
-          h("span", { class: "ledger-amount" }, formatINR(budget.contingency_inr))
-        ),
-        h(
-          "div",
-          { class: "ledger-entry-sub" },
-          h("span", { class: "ledger-meta" }, `${budget.contingency_percentage}% reserved for unexpected logistical surcharges & weather mitigations`),
-          h("div", { class: "ledger-bar-track", "aria-hidden": "true" },
-            h("div", {
-              class: "ledger-bar-fill fill-contingency",
-              style: { width: `${Math.max(2, Math.min(100, budget.contingency_percentage * 2.5))}%` },
-            })
-          )
-        )
-      ),
+      (() => {
+        const contBarFill = h("div", { class: "ledger-bar-fill contingency-bar-fill" });
+        contBarFill.style.width = `${Math.min(100, Math.max(2, budget.contingency_percentage))}%`;
 
-      // Double rule separator before Grand Total
-      h("div", { class: "ledger-divider-double" }),
+        return h(
+          "div",
+          { class: "ledger-grid-row ledger-contingency-row", role: "row" },
+          h("span", { class: "ledger-row-name" }, "Contingency reserve"),
+          h("span", { class: "ledger-row-amount font-tabular" }, formatINR(budget.contingency_inr)),
+          h("span", { class: "ledger-row-share font-tabular" }, `${budget.contingency_percentage}%`),
+          h("p", { class: "ledger-row-desc" }, `${budget.contingency_percentage}% reserved for unexpected logistical surcharges & weather mitigations`),
+          h("div", { class: "ledger-bar-track", "aria-hidden": "true" }, contBarFill)
+        );
+      })(),
 
       // Grand Total Row
       h(
         "div",
-        { class: "ledger-total-row" },
-        h("div", { class: "total-name" },
-          h("strong", {}, "Grand Total Allocated Spend"),
-          h("span", { class: "total-sub" }, `Matches intake ₹${budget.total_budget_inr.toLocaleString("en-IN")} exactly (100.0%)`)
+        { class: "ledger-total-row", role: "row" },
+        h(
+          "div",
+          { class: "ledger-total-label-cell" },
+          h("span", { class: "ledger-total-name" }, "Total"),
+          h("span", { class: "ledger-total-note" }, "Adds up to your budget, to the rupee.")
         ),
-        h("span", { class: "ledger-dots", "aria-hidden": "true" }),
-        h("div", { class: "total-amount" },
-          h("strong", {}, formatINR(budget.total_budget_inr)),
-          h("span", { class: "total-words" }, formatINRWords(budget.total_budget_inr))
-        )
+        h("span", { class: "ledger-total-amount font-tabular" }, formatINR(budget.total_budget_inr)),
+        h("span", { class: "ledger-total-share font-tabular" }, "100%")
       )
     ),
 

@@ -7,7 +7,7 @@
  * - Indian number formatting for aria-valuetext (guests, lakh, crore)
  * - Tick mark percentage calculation
  *
- * STRICT SECURITY: Pure mathematical & string formatting functions. No DOM access.
+ * STRICT SECURITY: Pure computation & string formatting functions. No DOM access.
  */
 
 export const ALLOWED_GUESTS_MIN = 5;
