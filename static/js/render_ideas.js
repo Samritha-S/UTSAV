@@ -36,6 +36,7 @@ export function renderIdeasPanel(ideas, eventSummary, isActive) {
       "div",
       { class: "panel-masthead" },
       h("h3", { class: "panel-headline" }, "Creative Themes & Culinary Programme"),
+      h("p", { class: "panel-deck" }, "Ideas with an Indian soul, shaped by your budget and preferences."),
       h(
         "p",
         { class: "programme-source-notice" },

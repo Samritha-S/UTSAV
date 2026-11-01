@@ -61,7 +61,7 @@ export function renderTimelinePanel(timeline, isActive) {
       h(
         "p",
         { class: "panel-deck" },
-        `Calculated backwards from ${formatDate(timeline.event_date)}. Total of ${totalTasks} sequenced planning milestones.`
+        "Your plan, worked backwards from the big day."
       ),
       createKolamMotif("divider", 64, 16)
     ),

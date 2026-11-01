@@ -33,7 +33,7 @@ export function renderBudgetPanel(budget, isActive) {
       { class: "panel-masthead" },
       h("h3", { class: "panel-headline" }, "Budget Allocation & Spending Ledger"),
       h("p", { class: "panel-deck" },
-        "Mathematical allocation based on Indian market multipliers, guest scale, and city tier. Every rupee accounted for with zero rounding delta."
+        "Where every rupee goes. These are planning estimates, so treat them as a starting point."
       ),
       createKolamMotif("divider", 64, 16)
     ),

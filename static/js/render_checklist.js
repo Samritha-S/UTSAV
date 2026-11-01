@@ -52,7 +52,7 @@ export function renderChecklistPanel(checklist, budget, checkedItems, isActive) 
       { class: "panel-masthead" },
       h("h3", { class: "panel-headline" }, "Vendor Diligence & Compliance Checklist"),
       h("p", { class: "panel-deck" },
-        "Vendor diligence to verify locally: loudspeaker sound permits, electrical clearances, and contractual milestone clauses."
+        "Things to confirm with each vendor. Rules and costs vary by city, so verify locally."
       ),
       createKolamMotif("divider", 64, 16)
     ),

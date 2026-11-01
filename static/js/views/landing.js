@@ -281,7 +281,7 @@ export const landingView = {
           h(
             "p",
             { class: "how-step-desc" },
-            "Enter your target date, guest headcount, and total budget. City tier multipliers instantly scale baseline rates to local market economics."
+            "Enter your target date, guest headcount, and total budget. City tier rates help tailor estimates to local costs."
           )
         ),
         h(
@@ -292,7 +292,7 @@ export const landingView = {
           h(
             "p",
             { class: "how-step-desc" },
-            "Deterministic algorithms balance expenditure across categories with zero rounding drift, and backwards-schedule vendor booking milestones."
+            "Balanced allocations across every category, with action milestones scheduled backwards from the big day."
           )
         ),
         h(
@@ -321,7 +321,7 @@ export const landingView = {
         { class: "demo-header-strip" },
         h("div", {},
           h("h2", { id: "demo-headline", class: "demo-headline" }, "Live Budget Ledger Demo"),
-          h("p", { class: "demo-subtext" }, "Adjust guest count and budget to observe deterministic re-allocation live.")
+          h("p", { class: "demo-subtext" }, "Adjust guest count and budget to observe live re-allocation.")
         ),
         h(
           "div",
@@ -438,7 +438,7 @@ export const landingView = {
           "div",
           { class: "demo-ledger-masthead" },
           h("span", { id: "demo-cpg-indicator", class: "demo-cpg-tag" }, formatPerGuestReaction(currentDemoBudget, currentDemoGuests)),
-          h("span", { id: "demo-status-msg", class: "demo-status-text" }, "Mathematical allocation · Verified balance")
+          h("span", { id: "demo-status-msg", class: "demo-status-text" }, "Balanced allocation · Verified total")
         ),
         h("div", { id: "demo-ledger-rows-container", class: "demo-ledger-rows" })
       ),
@@ -548,7 +548,7 @@ export const landingView = {
         budgetCache.set(cacheKey, result);
         renderDemoLedger(result);
         if (statusEl) {
-          statusEl.textContent = "Mathematical allocation · Verified balance";
+          statusEl.textContent = "Balanced allocation · Verified total";
         }
       } catch (err) {
         if (err && err.name === "AbortError") return;
