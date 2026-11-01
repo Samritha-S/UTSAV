@@ -414,21 +414,73 @@ def test_tab_labels_and_panel_intros():
     # Breadcrumb above title
     assert 'class: "programme-breadcrumb"' in event_js
 
-    # Humble panel intros
+    # Humble panel intros (superseding prompt requirements)
     assert (
         "Where every rupee goes. These are planning estimates, so treat them as a starting point."
         in event_js
     )
-    assert "Your plan, worked backwards from the big day." in event_js
     assert (
-        "Things to confirm with each vendor. Rules and costs vary by city, so verify locally."
+        "Key milestones leading up to the celebration, followed by a minute-by-minute schedule for the day itself."
         in event_js
     )
-    assert "Ideas with an Indian soul, shaped by your budget and preferences." in event_js
+    assert (
+        "Practical tasks to tackle, organized by priority so you can focus on what matters next."
+        in event_js
+    )
+    assert (
+        "Themes, menus and cultural touches tailored to your celebration. Pick what resonates and ignore the rest."
+        in event_js
+    )
 
 
-def test_empty_state_divider_centered():
-    """Verify the diamond motif divider is centered inside the events empty state."""
+def test_single_row_compact_header():
+    """Verify the header is compact (<=64px desktop, <=56px mobile), single-row, with no tagline."""
+    index_html = (STATIC_DIR / "index.html").read_text(encoding="utf-8")
     css_content = (STATIC_DIR / "styles.css").read_text(encoding="utf-8")
-    assert ".events-empty-state .kolam-divider" in css_content
-    assert "margin-inline: auto;" in css_content
+
+    # No tagline element in header
+    assert 'class="tagline"' not in index_html
+
+    # Header height token <= 64px
+    header_h_match = re.search(r"--header-h:\s*(\d+)px", css_content)
+    assert header_h_match is not None
+    assert int(header_h_match.group(1)) <= 64
+
+    # Header max-height rules
+    assert "max-height: 64px;" in css_content
+    assert "max-height: 56px;" in css_content
+
+
+def test_two_column_layout_classes():
+    """Verify two-column layout classes for wizard and plan screen."""
+    css_content = (STATIC_DIR / "styles.css").read_text(encoding="utf-8")
+    plan_js = (STATIC_DIR / "js" / "views" / "plan.js").read_text(encoding="utf-8")
+    event_js = (STATIC_DIR / "js" / "views" / "event.js").read_text(encoding="utf-8")
+
+    # Wizard two-column layout
+    assert "wizard-layout" in plan_js
+    assert "wizard-sidebar" in plan_js
+    assert ".wizard-layout" in css_content
+    assert ".wizard-sidebar" in css_content
+
+    # Plan screen two-column layout
+    assert "programme-two-column-layout" in event_js
+    assert "programme-sidebar" in event_js
+    assert ".programme-two-column-layout" in css_content
+    assert ".programme-sidebar" in css_content
+
+
+def test_compact_vertical_rhythm_and_panel_padding():
+    """Verify panel inner padding <= 32px and no sibling gaps in app views > 48px."""
+    css_content = (STATIC_DIR / "styles.css").read_text(encoding="utf-8")
+
+    # Panel inner padding <= 32px
+    panel_pad_matches = re.findall(r"\.programme-panel\s*\{[^}]*padding:\s*(\d+)px", css_content)
+    for pad in panel_pad_matches:
+        assert int(pad) <= 32, f"Expected panel padding <= 32px, found {pad}px"
+
+    intake_panel_matches = re.findall(
+        r"\.intake-step-panel\s*\{[^}]*padding:\s*(\d+)px", css_content
+    )
+    for pad in intake_panel_matches:
+        assert int(pad) <= 32, f"Expected intake panel padding <= 32px, found {pad}px"
