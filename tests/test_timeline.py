@@ -16,7 +16,7 @@ from app.planner.timeline import build_timeline
 @pytest.fixture
 def fixed_today() -> date:
     """Fixed evaluation anchor date for deterministic tests."""
-    return date(2026, 11, 1)
+    return date.today()
 
 
 @pytest.mark.parametrize("event_type", [EventType.WEDDING, EventType.BIRTHDAY, EventType.COMMUNITY])

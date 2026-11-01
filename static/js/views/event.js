@@ -787,7 +787,6 @@ export const eventView = {
 
     return root;
   },
-  },
 
   // -------------------------------------------------------------------
   // Component Builders: Timeline with Calendar Export
