@@ -87,6 +87,25 @@ export const eventView = {
 
     const view = h("div", { class: "event-view-container", "data-view": "event" });
 
+    // Breadcrumb line above event title
+    const breadcrumb = h(
+      "nav",
+      { class: "programme-breadcrumb", "aria-label": "Breadcrumb" },
+      h(
+        "a",
+        {
+          href: "#/events",
+          class: "breadcrumb-link",
+          onclick: (e) => {
+            e.preventDefault();
+            ctx.navigate("#/events");
+          },
+        },
+        "← My saved events"
+      )
+    );
+    view.appendChild(breadcrumb);
+
     // -----------------------------------------------------------------
     // 1. Editorial Header & Large Countdown
     // -----------------------------------------------------------------
@@ -242,18 +261,6 @@ export const eventView = {
           },
         },
         "Start over"
-      ),
-      h(
-        "a",
-        {
-          href: "#/events",
-          class: "btn btn-text btn-sm",
-          onclick: (e) => {
-            e.preventDefault();
-            ctx.navigate("#/events");
-          },
-        },
-        "← My saved events"
       )
     );
     view.appendChild(toolbar);
@@ -265,10 +272,10 @@ export const eventView = {
       "div",
       { class: "tab-navigation-bar", role: "tablist", "aria-label": "Programme Sections" },
       ...[
-        { id: "tab-budget", panelId: "panel-budget", label: "Budget Ledger" },
-        { id: "tab-timeline", panelId: "panel-timeline", label: "Timeline Run-of-Show" },
-        { id: "tab-checklist", panelId: "panel-checklist", label: "Vendor Checklist" },
-        { id: "tab-ideas", panelId: "panel-ideas", label: "Creative Ideas & Menu" },
+        { id: "tab-budget", panelId: "panel-budget", label: "Budget" },
+        { id: "tab-timeline", panelId: "panel-timeline", label: "Timeline" },
+        { id: "tab-checklist", panelId: "panel-checklist", label: "Checklist" },
+        { id: "tab-ideas", panelId: "panel-ideas", label: "Ideas" },
       ].map((t) => {
         const isSelected = this.activeTab === t.id;
         return h(
@@ -375,7 +382,7 @@ export const eventView = {
         "div",
         { class: "panel-masthead" },
         h("h2", { class: "panel-headline" }, "Budget Allocation & Spending Ledger"),
-        h("p", { class: "panel-deck" }, "Mathematical allocation based on Indian market multipliers, guest scale, and city tier. Every rupee accounted for with zero rounding delta."),
+        h("p", { class: "panel-deck" }, "Where every rupee goes. These are planning estimates, so treat them as a starting point."),
         createKolamMotif("divider", 64, 16)
       ),
 
@@ -689,7 +696,7 @@ export const eventView = {
         "div",
         { class: "panel-masthead" },
         h("h2", { class: "panel-headline" }, "Backwards-Scheduled Run-of-Show Timeline"),
-        h("p", { class: "panel-deck" }, "Action milestones sequenced backwards from celebration day to protect vendor availability and negotiate advantageous rates."),
+        h("p", { class: "panel-deck" }, "Your plan, worked backwards from the big day."),
         createKolamMotif("divider", 64, 16)
       ),
 
@@ -777,7 +784,7 @@ export const eventView = {
         "div",
         { class: "panel-masthead" },
         h("h2", { class: "panel-headline" }, "Vendor Diligence & Compliance Checklist"),
-        h("p", { class: "panel-deck" }, "Sound clearances to verify locally, generator power infrastructure, contract deliverables, and tasting appointments."),
+        h("p", { class: "panel-deck" }, "Things to confirm with each vendor. Rules and costs vary by city, so verify locally."),
         createKolamMotif("divider", 64, 16)
       ),
 
@@ -989,6 +996,7 @@ export const eventView = {
         "div",
         { class: "panel-masthead" },
         h("h2", { class: "panel-headline" }, "Creative Themes & Culinary Concepts"),
+        h("p", { class: "panel-deck" }, "Ideas with an Indian soul, shaped by your budget and preferences."),
         h(
           "p",
           { class: "programme-source-notice" },
