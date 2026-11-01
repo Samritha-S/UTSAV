@@ -63,6 +63,7 @@ Generic planning applications fail because they either force rigid generic templ
 - **"The Printed Programme" Editorial Design System**:
   - Typeset like an elegant invitation booklet and traditional shopkeeper's ledger on warm paper (`#FBF7EF`) with near-black ink (`#1F1B16`), deep forest green (`#1F5B45`), marigold (`#E0A100`), and vermilion (`#B3261E`) for urgent milestones.
   - Zero gradients, zero pill/badge capsules, sharp 2px editorial corners, plain text labels or inline SVG marks (zero emoji), and authentic geometric Kolam/Rangoli vector motifs.
+  - **Full-Window Landing Hero**: The landing page stage occupies the entire window viewport (`100vh`/`100svh`/`100dvh`, edge to edge) with an overlaid transparent header, an oversized bleeding 8-fold radial Kolam vector seal drawn via deterministic path math (`static/js/lib/seal.js`), a responsive three-door event index along the lower edge, and an accessible scroll cue to the walkthrough.
 
 ---
 

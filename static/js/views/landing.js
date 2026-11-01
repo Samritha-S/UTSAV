@@ -24,6 +24,7 @@ import {
   h,
   createKolamMotif,
 } from "../utils.js";
+import { createKolamSeal } from "../lib/seal.js";
 
 // Session-level preselection hook for guided plan wizard
 let preselectedEventType = "wedding";
@@ -56,7 +57,7 @@ const DEMO_PRESETS = {
     city_tier: "tier2",
     venue_setting: "indoor",
     dietary_preferences: ["vegetarian"],
-    leadTime: "Typical lead time: 3 to 6 months",
+    leadTime: "3 to 6 months typical lead time",
     doorDesc: "Multi-day ceremonies, auspicious muhurats, vendor contracts, and festive hospitality.",
   },
   birthday: {
@@ -68,7 +69,7 @@ const DEMO_PRESETS = {
     venue_setting: "indoor",
     dietary_preferences: ["vegetarian"],
     age_group: "kids",
-    leadTime: "Typical lead time: 3 to 4 weeks",
+    leadTime: "3 to 4 weeks typical lead time",
     doorDesc: "Milestone birthdays, themed decor, age-tailored activities, and artisanal cakes.",
   },
   community: {
@@ -79,7 +80,7 @@ const DEMO_PRESETS = {
     city_tier: "tier2",
     venue_setting: "outdoor",
     dietary_preferences: ["vegetarian"],
-    leadTime: "Typical lead time: 1 to 2 months",
+    leadTime: "1 to 2 months typical lead time",
     doorDesc: "Diwali melas, society utsavs, cultural performances, and crowd-pleasing feasts.",
   },
 };
@@ -100,112 +101,174 @@ export const landingView = {
     const view = h("div", { class: "landing-view-container" });
 
     // -----------------------------------------------------------------
-    // 1. Confident Typographic Hero
+    // 1. Full-Window Edge-to-Edge Typographic Hero
     // -----------------------------------------------------------------
+    // Kolam seal visual
+    const sealElement = createKolamSeal({
+      size: 580,
+      animated: true,
+      className: "hero-kolam-seal",
+    });
+
+    function createDownwardArrowSvg() {
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("width", "12");
+      svg.setAttribute("height", "12");
+      svg.setAttribute("viewBox", "0 0 12 12");
+      svg.setAttribute("fill", "none");
+      svg.setAttribute("aria-hidden", "true");
+      svg.setAttribute("class", "scroll-cue-arrow");
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", "M6 2v7.5M6 9.5l-3-3M6 9.5l3-3");
+      path.setAttribute("stroke", "currentColor");
+      path.setAttribute("stroke-width", "1.75");
+      path.setAttribute("stroke-linecap", "round");
+      path.setAttribute("stroke-linejoin", "round");
+      svg.appendChild(path);
+      return svg;
+    }
+
     const heroSection = h(
       "section",
-      { class: "landing-hero", "aria-labelledby": "hero-headline" },
-      createKolamMotif("mark", 32, 32),
-      h(
-        "h1",
-        { id: "hero-headline", class: "hero-headline", tabindex: "-1" },
-        "Event Planning Run with Exact Math and Cultural Care"
-      ),
-      h(
-        "p",
-        { class: "hero-lead-promise" },
-        "A mathematically balanced rupee ledger, backwards-scheduled milestone run-of-show, statutory compliance checklists, and culturally tailored creative ideas for Indian celebrations."
-      ),
+      { id: "hero-section", class: "landing-hero", "aria-labelledby": "hero-headline" },
+      // Bleeding Kolam Seal visual anchored to window edge
+      h("div", { class: "hero-seal-wrapper", "aria-hidden": "true" }, sealElement),
+
+      // Main Stage Area (Text Content)
       h(
         "div",
-        { class: "hero-cta-group" },
+        { class: "hero-stage-container" },
         h(
-          "a",
-          {
-            href: "#/plan",
-            class: "btn btn-primary btn-lg",
-            onclick: (e) => {
-              e.preventDefault();
-              setPreselectedEventType("wedding");
-              ctx.navigate("#/plan");
-            },
-          },
-          "Plan Your Celebration"
+          "div",
+          { class: "hero-text-column" },
+          h("span", { class: "hero-kicker" }, "The Event Programme & Planning Ledger"),
+          h(
+            "h1",
+            { id: "hero-headline", class: "hero-headline", tabindex: "-1" },
+            "Event Planning Run with Exact Math and Cultural Care"
+          ),
+          h(
+            "p",
+            { class: "hero-lead-promise" },
+            "A mathematically balanced rupee ledger, backwards-scheduled milestone run-of-show, statutory compliance checklists, and culturally tailored creative ideas for Indian celebrations."
+          ),
+          h(
+            "div",
+            { class: "hero-cta-group" },
+            h(
+              "a",
+              {
+                href: "#/plan",
+                id: "hero-primary-cta",
+                class: "btn btn-primary btn-lg",
+                onclick: (e) => {
+                  e.preventDefault();
+                  setPreselectedEventType("wedding");
+                  ctx.navigate("#/plan");
+                },
+              },
+              "Plan Your Celebration"
+            ),
+            h(
+              "a",
+              {
+                href: "#how-it-works-section",
+                id: "hero-secondary-link",
+                class: "hero-secondary-link",
+                onclick: (e) => {
+                  e.preventDefault();
+                  const target = document.getElementById("how-it-works-section");
+                  if (target) {
+                    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+                    target.scrollIntoView({ behavior: prefersReduced ? "auto" : "smooth" });
+                  }
+                },
+              },
+              "Explore the method",
+              h("span", { class: "arrow", "aria-hidden": "true" }, " ↓")
+            )
+          )
+        )
+      ),
+
+      // Bottom Stage Area (3 Event Doors Index + Scroll Cue)
+      h(
+        "div",
+        { class: "hero-bottom-stage" },
+        h(
+          "div",
+          { class: "hero-doors-grid", role: "list", "aria-label": "Event Types Quick Select" },
+          ...[
+            { type: "wedding", title: "Wedding Celebration", lead: "3 to 6 months lead time", index: "01" },
+            { type: "birthday", title: "Milestone Birthday", lead: "3 to 4 weeks lead time", index: "02" },
+            { type: "community", title: "Community Festival", lead: "1 to 2 months lead time", index: "03" },
+          ].map((door) => {
+            return h(
+              "a",
+              {
+                href: `#/plan?type=${door.type}`,
+                class: "hero-door-band",
+                role: "listitem",
+                tabindex: "0",
+                "aria-label": `${door.title}: ${door.lead}`,
+                onclick: (e) => {
+                  e.preventDefault();
+                  setPreselectedEventType(door.type);
+                  ctx.navigate("#/plan");
+                },
+                onkeydown: (e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setPreselectedEventType(door.type);
+                    ctx.navigate("#/plan");
+                  }
+                },
+              },
+              h(
+                "div",
+                { class: "door-band-meta" },
+                h("span", { class: "door-band-index", "aria-hidden": "true" }, door.index),
+                h("span", { class: "door-band-title" }, door.title)
+              ),
+              h("span", { class: "door-band-sub" }, `${door.lead} →`)
+            );
+          })
         ),
         h(
-          "a",
-          {
-            href: "#live-demo-section",
-            class: "btn btn-outline",
-            onclick: (e) => {
-              e.preventDefault();
-              const el = document.getElementById("live-demo-section");
-              if (el) el.scrollIntoView({ behavior: "smooth" });
+          "div",
+          { class: "hero-scroll-cue-bar" },
+          h(
+            "a",
+            {
+              href: "#how-it-works-section",
+              class: "hero-scroll-cue-link",
+              onclick: (e) => {
+                e.preventDefault();
+                const target = document.getElementById("how-it-works-section");
+                if (target) {
+                  const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+                  target.scrollIntoView({ behavior: prefersReduced ? "auto" : "smooth" });
+                }
+              },
             },
-          },
-          "Explore Live Demo ↓"
+            h("span", {}, "See how it works"),
+            createDownwardArrowSvg()
+          )
         )
       )
     );
     view.appendChild(heroSection);
 
     // -----------------------------------------------------------------
-    // 2. Three Full-Width Ruled Doors
-    // -----------------------------------------------------------------
-    const doorsSection = h(
-      "section",
-      { class: "landing-doors-section", "aria-labelledby": "doors-headline" },
-      h("h2", { id: "doors-headline", class: "section-eyebrow" }, "Choose Your Celebration"),
-      h(
-        "div",
-        { class: "doors-list", role: "list" },
-        ...[
-          { type: "wedding", title: "Wedding Celebration", ...DEMO_PRESETS.wedding },
-          { type: "birthday", title: "Milestone Birthday", ...DEMO_PRESETS.birthday },
-          { type: "community", title: "Community Festival & Mela", ...DEMO_PRESETS.community },
-        ].map((item) => {
-          return h(
-            "article",
-            {
-              class: "door-row",
-              role: "listitem",
-              tabindex: "0",
-              onclick: () => {
-                setPreselectedEventType(item.type);
-                ctx.navigate("#/plan");
-              },
-              onkeydown: (e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  setPreselectedEventType(item.type);
-                  ctx.navigate("#/plan");
-                }
-              },
-            },
-            h(
-              "div",
-              { class: "door-content" },
-              h("h3", { class: "door-title" }, item.title),
-              h("p", { class: "door-desc" }, item.doorDesc),
-              h("span", { class: "door-lead-time" }, item.leadTime)
-            ),
-            h(
-              "div",
-              { class: "door-action" },
-              h("span", { class: "door-arrow", "aria-hidden": "true" }, "Start Plan →")
-            )
-          );
-        })
-      )
-    );
-    view.appendChild(doorsSection);
-
-    // -----------------------------------------------------------------
     // 3. Editorial "How It Works" in 3 Steps
     // -----------------------------------------------------------------
     const howSection = h(
       "section",
-      { class: "landing-how-section", "aria-labelledby": "how-headline" },
+      {
+        id: "how-it-works-section",
+        class: "landing-how-section",
+        "aria-labelledby": "how-headline",
+      },
       h("h2", { id: "how-headline", class: "section-eyebrow" }, "The Planning Ledger Method"),
       h(
         "div",
