@@ -129,6 +129,19 @@ export class HashRouter {
     this.currentView = view;
     this.currentRoute = route;
 
+    // Toggle landing route class on body and root container for full-bleed hero layout
+    if (route === "/") {
+      document.body.classList.add("is-landing-route");
+      this.container.classList.add("is-landing-route");
+    } else {
+      document.body.classList.remove("is-landing-route");
+      this.container.classList.remove("is-landing-route");
+      const header = document.querySelector(".app-header");
+      if (header) {
+        header.classList.remove("is-scrolled");
+      }
+    }
+
     // View context passed to mount
     const ctx = {
       route,

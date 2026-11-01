@@ -51,6 +51,38 @@ document.addEventListener("DOMContentLoaded", () => {
   router = new HashRouter(rootContainer, routes, announcer);
   router.init();
 
+  // Dynamic header transparency and height synchronization
+  const header = document.querySelector(".app-header");
+  const updateHeaderMetrics = () => {
+    if (header) {
+      const h = header.offsetHeight;
+      if (h > 0) {
+        document.documentElement.style.setProperty("--header-h", `${h}px`);
+      }
+    }
+  };
+
+  updateHeaderMetrics();
+  window.addEventListener("resize", updateHeaderMetrics, { passive: true });
+
+  let scrollTicking = false;
+  window.addEventListener(
+    "scroll",
+    () => {
+      if (!scrollTicking) {
+        window.requestAnimationFrame(() => {
+          if (header && document.body.classList.contains("is-landing-route")) {
+            const isScrolled = window.scrollY > 20;
+            header.classList.toggle("is-scrolled", isScrolled);
+          }
+          scrollTicking = false;
+        });
+        scrollTicking = true;
+      }
+    },
+    { passive: true }
+  );
+
   // Storage notice check
   if (!isStorageAvailable()) {
     console.warn("Utsav Planner: localStorage is disabled; plans will not be persisted across browser reloads.");
