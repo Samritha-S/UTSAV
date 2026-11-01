@@ -126,8 +126,26 @@ export function createKolamSeal(options = {}) {
   const cx = 250;
   const cy = 250;
 
+  // 0. ClipPath Definition to Guarantee Circular Boundary
+  const defs = createSvgElement("defs");
+  const clipPath = createSvgElement("clipPath", { id: "kolam-seal-boundary" });
+  clipPath.appendChild(
+    createSvgElement("circle", {
+      cx,
+      cy,
+      r: 236,
+    })
+  );
+  defs.appendChild(clipPath);
+  svg.appendChild(defs);
+
+  // Group wrapped with clip-path so no stroke or corner can ever escape the boundary
+  const boundedGroup = createSvgElement("g", {
+    "clip-path": "url(#kolam-seal-boundary)",
+  });
+
   // 1. Concentric Guide Circles
-  svg.appendChild(
+  boundedGroup.appendChild(
     createSvgElement("circle", {
       cx,
       cy,
@@ -139,7 +157,7 @@ export function createKolamSeal(options = {}) {
     })
   );
 
-  svg.appendChild(
+  boundedGroup.appendChild(
     createSvgElement("circle", {
       cx,
       cy,
@@ -150,13 +168,14 @@ export function createKolamSeal(options = {}) {
     })
   );
 
-  // 2. Interlaced Diamond / Square Frames (Rotated 45 degrees)
-  svg.appendChild(
+  // 2. Interlaced Diamond / Square Frames (Constrained within r=218 circle)
+  // Rotated 45-deg square: width 308 -> half-diag 154 * sqrt(2) = 217.79px <= 218px
+  boundedGroup.appendChild(
     createSvgElement("rect", {
-      x: 75,
-      y: 75,
-      width: 350,
-      height: 350,
+      x: 96,
+      y: 96,
+      width: 308,
+      height: 308,
       transform: `rotate(45 ${cx} ${cy})`,
       class: "kolam-stroke-main",
       stroke: "currentColor",
@@ -164,12 +183,13 @@ export function createKolamSeal(options = {}) {
     })
   );
 
-  svg.appendChild(
+  // Upright square: width 300 -> corner dist 150 * sqrt(2) = 212.13px <= 218px
+  boundedGroup.appendChild(
     createSvgElement("rect", {
-      x: 95,
-      y: 95,
-      width: 310,
-      height: 310,
+      x: 100,
+      y: 100,
+      width: 300,
+      height: 300,
       class: "kolam-stroke-faint",
       stroke: "currentColor",
       "stroke-width": "1",
@@ -178,7 +198,7 @@ export function createKolamSeal(options = {}) {
 
   // 3. Outer Radial Lotus Petals (8-fold symmetry)
   const outerPetalsPath = generateRadialPetalsPath(cx, cy, 140, 215, 8);
-  svg.appendChild(
+  boundedGroup.appendChild(
     createSvgElement("path", {
       d: outerPetalsPath,
       class: "kolam-stroke-main",
@@ -202,11 +222,11 @@ export function createKolamSeal(options = {}) {
       "stroke-linejoin": "round",
     })
   );
-  svg.appendChild(midPetalsGroup);
+  boundedGroup.appendChild(midPetalsGroup);
 
   // 5. Inner Petal Ring
   const innerPetalsPath = generateRadialPetalsPath(cx, cy, 45, 95, 8);
-  svg.appendChild(
+  boundedGroup.appendChild(
     createSvgElement("path", {
       d: innerPetalsPath,
       class: "kolam-stroke-main",
@@ -217,7 +237,7 @@ export function createKolamSeal(options = {}) {
   );
 
   // 6. Central Symmetrical Rings & Core Bindu
-  svg.appendChild(
+  boundedGroup.appendChild(
     createSvgElement("circle", {
       cx,
       cy,
@@ -228,7 +248,7 @@ export function createKolamSeal(options = {}) {
     })
   );
 
-  svg.appendChild(
+  boundedGroup.appendChild(
     createSvgElement("circle", {
       cx,
       cy,
@@ -240,7 +260,7 @@ export function createKolamSeal(options = {}) {
     })
   );
 
-  svg.appendChild(
+  boundedGroup.appendChild(
     createSvgElement("circle", {
       cx,
       cy,
@@ -288,7 +308,8 @@ export function createKolamSeal(options = {}) {
       );
     }
   }
-  svg.appendChild(raysGroup);
+  boundedGroup.appendChild(raysGroup);
+  svg.appendChild(boundedGroup);
 
   return svg;
 }
