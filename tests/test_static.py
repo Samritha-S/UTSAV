@@ -358,3 +358,70 @@ def test_node_test_suites_pass():
         assert res.returncode == 0, (
             f"Node test suite {tf.name} failed:\nSTDOUT:\n{res.stdout}\nSTDERR:\n{res.stderr}"
         )
+
+
+def test_content_frame_tokens_and_layout():
+    """Verify ONE content frame system, tokens, scrollbar-gutter, and no 100vw usage."""
+    css_content = (STATIC_DIR / "styles.css").read_text(encoding="utf-8")
+    index_content = (STATIC_DIR / "index.html").read_text(encoding="utf-8")
+
+    # Tokens in :root
+    assert "--frame-max: 1120px;" in css_content
+    assert "--narrow-max: 720px;" in css_content
+    assert "scrollbar-gutter: stable;" in css_content
+    assert "100vw" not in css_content, (
+        "100vw is forbidden to prevent horizontal scrollbar layout shifts"
+    )
+
+    # Frame and narrow utilities
+    assert ".frame {" in css_content
+    assert ".narrow {" in css_content
+
+    # Header and footer containers use .frame
+    assert 'class="header-container frame"' in index_content
+    assert 'class="footer-container frame"' in index_content
+
+
+def test_banned_copy_phrases_absent():
+    """Verify absence of jargon and overclaiming phrases across all static files."""
+    banned = [
+        "mathematical",
+        "market multipliers",
+        "zero rounding delta",
+        "zero rounding drift",
+        "statutory",
+        "regional market data",
+    ]
+    for file_path in STATIC_DIR.rglob("*"):
+        if file_path.suffix in [".html", ".css", ".js"]:
+            content = file_path.read_text(encoding="utf-8").lower()
+            for phrase in banned:
+                assert phrase not in content, (
+                    f"Found forbidden phrase '{phrase}' in {file_path.name}"
+                )
+
+
+def test_tab_labels_and_panel_intros():
+    """Verify short sentence-case tab labels and humble panel intros in plan and event views."""
+    event_js = (STATIC_DIR / "js" / "views" / "event.js").read_text(encoding="utf-8")
+
+    # Short tab labels
+    assert 'label: "Budget"' in event_js
+    assert 'label: "Timeline"' in event_js
+    assert 'label: "Checklist"' in event_js
+    assert 'label: "Ideas"' in event_js
+
+    # Breadcrumb above title
+    assert 'class: "programme-breadcrumb"' in event_js
+
+    # Humble panel intros
+    assert (
+        "Where every rupee goes. These are planning estimates, so treat them as a starting point."
+        in event_js
+    )
+    assert "Your plan, worked backwards from the big day." in event_js
+    assert (
+        "Things to confirm with each vendor. Rules and costs vary by city, so verify locally."
+        in event_js
+    )
+    assert "Ideas with an Indian soul, shaped by your budget and preferences." in event_js
