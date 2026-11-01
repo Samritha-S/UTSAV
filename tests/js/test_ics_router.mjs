@@ -117,6 +117,28 @@ function runTests() {
     rawPath: "/unknown/route",
   });
 
+  // 6. Path-style door routes & query fallback
+  assert.deepEqual(parseHash("#/plan/wedding"), {
+    route: "/plan",
+    params: { type: "wedding" },
+    rawPath: "/plan/wedding",
+  });
+  assert.deepEqual(parseHash("#/plan/birthday"), {
+    route: "/plan",
+    params: { type: "birthday" },
+    rawPath: "/plan/birthday",
+  });
+  assert.deepEqual(parseHash("#/plan/community"), {
+    route: "/plan",
+    params: { type: "community" },
+    rawPath: "/plan/community",
+  });
+  assert.deepEqual(parseHash("#/plan?type=wedding"), {
+    route: "/plan",
+    params: { type: "wedding" },
+    rawPath: "/plan?type=wedding",
+  });
+
   console.log("All Node.js ICS & Router helper tests passed successfully!");
 }
 

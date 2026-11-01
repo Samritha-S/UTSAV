@@ -24,33 +24,53 @@
  * @returns {{ route: string, params: Object, rawPath: string }}
  */
 export function parseHash(hash) {
-  let clean = (hash || "").replace(/^#/, "").trim();
-  if (!clean || clean === "/") {
+  let raw = (hash || "").replace(/^#/, "").trim();
+  if (!raw || raw === "/") {
     return { route: "/", params: {}, rawPath: "/" };
   }
-  if (!clean.startsWith("/")) {
-    clean = "/" + clean;
+  if (!raw.startsWith("/")) {
+    raw = "/" + raw;
   }
-  // Strip trailing slash if present
+
+  // Parse path and query string
+  const [pathPart, queryPart] = raw.split("?");
+  let clean = pathPart;
   if (clean.length > 1 && clean.endsWith("/")) {
     clean = clean.slice(0, -1);
+  }
+
+  // Parse query parameters
+  const queryParams = {};
+  if (queryPart) {
+    for (const pair of queryPart.split("&")) {
+      const [k, v] = pair.split("=");
+      if (k) queryParams[decodeURIComponent(k)] = decodeURIComponent(v || "");
+    }
   }
 
   // Route: /event/:id
   const eventMatch = clean.match(/^\/event\/([a-zA-Z0-9_-]+)$/);
   if (eventMatch) {
-    return { route: "/event/:id", params: { id: eventMatch[1] }, rawPath: clean };
+    return { route: "/event/:id", params: { id: eventMatch[1], ...queryParams }, rawPath: raw };
   }
 
-  // Exact static routes
+  // Route: /plan/:type (path-style route for door links)
+  const planMatch = clean.match(/^\/plan\/(wedding|birthday|community)$/);
+  if (planMatch) {
+    return { route: "/plan", params: { type: planMatch[1], ...queryParams }, rawPath: raw };
+  }
+
+  // Route: /plan
   if (clean === "/plan") {
-    return { route: "/plan", params: {}, rawPath: "/plan" };
-  }
-  if (clean === "/events") {
-    return { route: "/events", params: {}, rawPath: "/events" };
+    return { route: "/plan", params: queryParams, rawPath: raw };
   }
 
-  return { route: "404", params: {}, rawPath: clean };
+  // Route: /events
+  if (clean === "/events") {
+    return { route: "/events", params: queryParams, rawPath: raw };
+  }
+
+  return { route: "404", params: queryParams, rawPath: raw };
 }
 
 /**
@@ -68,6 +88,7 @@ export class HashRouter {
     this.announcer = announcer;
     this.currentView = null;
     this.currentRoute = null;
+    this._mountId = 0;
 
     this._onHashChange = this.handleHashChange.bind(this);
   }
@@ -86,10 +107,19 @@ export class HashRouter {
    */
   destroy() {
     window.removeEventListener("hashchange", this._onHashChange);
+    this._mountId++;
     if (this.currentView && typeof this.currentView.unmount === "function") {
-      this.currentView.unmount();
+      try {
+        this.currentView.unmount();
+      } catch (err) {
+        console.warn("Error unmounting view on destroy:", err);
+      }
+    }
+    if (this.container && typeof this.container.replaceChildren === "function") {
+      this.container.replaceChildren();
     }
     this.currentView = null;
+    this.currentRoute = null;
   }
 
   /**
@@ -109,6 +139,7 @@ export class HashRouter {
    * Main dispatch loop on route change.
    */
   async handleHashChange() {
+    const mountId = ++this._mountId;
     const { route, params, rawPath } = parseHash(window.location.hash);
 
     // Clean up previous view
@@ -120,9 +151,21 @@ export class HashRouter {
       }
     }
 
-    // Clear mounting container safely
-    while (this.container.firstChild) {
-      this.container.removeChild(this.container.firstChild);
+    // EMPTY the root container with replaceChildren(), so only one view can ever exist
+    if (this.container && typeof this.container.replaceChildren === "function") {
+      this.container.replaceChildren();
+    } else if (this.container) {
+      while (this.container.firstChild) {
+        this.container.removeChild(this.container.firstChild);
+      }
+    }
+
+    if (mountId !== this._mountId) {
+      // Stale async mount resolved after navigation; prune any elements it added
+      if (this.currentView && this.currentView.rootEl && typeof this.container.replaceChildren === "function") {
+        this.container.replaceChildren(this.currentView.rootEl);
+      }
+      return;
     }
 
     const view = this.routes[route] || this.routes["404"];
@@ -136,10 +179,6 @@ export class HashRouter {
     } else {
       document.body.classList.remove("is-landing-route");
       this.container.classList.remove("is-landing-route");
-      const header = document.querySelector(".app-header");
-      if (header) {
-        header.classList.remove("is-scrolled");
-      }
     }
 
     // View context passed to mount
@@ -160,9 +199,18 @@ export class HashRouter {
       }
     }
 
+    if (mountId !== this._mountId) {
+      // Stale async mount resolved after navigation; prune any elements it added
+      if (this.currentView && this.currentView.rootEl && typeof this.container.replaceChildren === "function") {
+        this.container.replaceChildren(this.currentView.rootEl);
+      }
+      return;
+    }
+
     // Accessibility: Move focus to the primary <h1> in the mounted view
     requestAnimationFrame(() => {
-      const heading = this.container.querySelector("h1, h2");
+      if (mountId !== this._mountId) return;
+      const heading = this.container.querySelector("h1");
       if (heading) {
         if (!heading.hasAttribute("tabindex")) {
           heading.setAttribute("tabindex", "-1");
