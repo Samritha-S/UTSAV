@@ -51,7 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
   router = new HashRouter(rootContainer, routes, announcer);
   router.init();
 
-  // Dynamic header transparency and height synchronization
+  // Height synchronization for exact header token
   const header = document.querySelector(".app-header");
   const updateHeaderMetrics = () => {
     if (header) {
@@ -64,24 +64,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   updateHeaderMetrics();
   window.addEventListener("resize", updateHeaderMetrics, { passive: true });
-
-  let scrollTicking = false;
-  window.addEventListener(
-    "scroll",
-    () => {
-      if (!scrollTicking) {
-        window.requestAnimationFrame(() => {
-          if (header && document.body.classList.contains("is-landing-route")) {
-            const isScrolled = window.scrollY > 20;
-            header.classList.toggle("is-scrolled", isScrolled);
-          }
-          scrollTicking = false;
-        });
-        scrollTicking = true;
-      }
-    },
-    { passive: true }
-  );
 
   // Storage notice check
   if (!isStorageAvailable()) {
